@@ -22,7 +22,7 @@ import db
 db.init_app(app)
 
 # register blue print
-from . import link_checker
+import link_checker
 
 app.register_blueprint(link_checker.bp)
 
