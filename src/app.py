@@ -1,15 +1,28 @@
-# from .factory import create_app
+import os
 
-# app=create_app()
+from flask import Flask
 
-# if __name__=='main':
-#     app.run()
-import flask
+# create and configure the app
+app = Flask(__name__, instance_relative_config=True)
+app.config.from_mapping(
+    SECRET_KEY=os.getenv('SECRET_KEY'),
+    DATABASE=os.path.join(app.instance_path, 'urls.sqlite'),
+)
+
+# create the instance folder
+try:
+    os.makedirs(app.instance_path)
+except OSError:
+    pass
+
+#database
+from . import db
+
+db.init_app(app)
+
+# register blue print
+from . import link_checker
+
+app.register_blueprint(link_checker.bp)
 
 
-app = flask.Flask(__name__)
-
-
-@app.route('/')
-def index():
-  return 'Hello World!'
