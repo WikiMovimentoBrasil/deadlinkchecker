@@ -1,5 +1,5 @@
 # Dead link checker
-An app that checks for deadlinks on Wikipedia
+An app that checks for deadlinks on Wikipedia. its is currently deployed at https://deadlinkchecker.toolforge.org/
 
 ## Getting started:
 1. Clone the repository
