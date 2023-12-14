@@ -16,9 +16,9 @@ except OSError:
     pass
 
 #database
-from . import db
+from .db import init_app
 
-db.init_app(app)
+init_app(app)
 
 # register blue print
 from . import link_checker
