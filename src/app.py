@@ -16,7 +16,8 @@ except OSError:
     pass
 
 #database
-from .db import init_app
+
+import db
 
 init_app(app)
 
