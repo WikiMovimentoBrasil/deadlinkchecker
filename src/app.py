@@ -19,7 +19,7 @@ except OSError:
 
 import db
 
-init_app(app)
+db.init_app(app)
 
 # register blue print
 from . import link_checker
