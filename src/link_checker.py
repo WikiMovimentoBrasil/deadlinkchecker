@@ -1,4 +1,4 @@
-from flask import Blueprint,request
+from flask import Blueprint,request,render_template
 
 import requests
 
@@ -24,4 +24,4 @@ def check_link():
 
         return result
     else:
-        return "Missing a url parameter",400
+        return render_template('checker/deadlinkchecker.html')
