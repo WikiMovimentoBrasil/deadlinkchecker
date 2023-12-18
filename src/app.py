@@ -1,9 +1,8 @@
-from .link_checker import bp
-from .db import init_app
 import os
 import subprocess
 
 from flask import Flask, request
+
 
 # create and configure the app
 app = Flask(__name__, instance_relative_config=True)
@@ -18,7 +17,6 @@ try:
 except OSError:
     pass
 
-
 @app.route("/update-server", methods=["POST"])
 def webhook():
     if request.method == "POST":
@@ -27,9 +25,12 @@ def webhook():
     else:
         return "Wrong event type", 400
 
-
 # database
-init_app(app)
+import db
+db.init_app(app)
 
 # register blue print
-app.register_blueprint(bp)
+import link_checker
+
+app.register_blueprint(link_checker.bp)
+
