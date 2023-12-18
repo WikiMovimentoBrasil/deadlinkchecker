@@ -1,27 +1,23 @@
-from flask import Blueprint,request,render_template
+import concurrent.futures
+from .utils import make_request
+from flask import Blueprint, request, render_template, jsonify
 
-import requests
+bp = Blueprint('linkchecker', __name__)
 
-bp=Blueprint('linkchecker',__name__)
 
 @bp.route('/')
+def index():
+    """Renders the deadlinkchecker template as the index page"""
+    return render_template('checker/deadlinkchecker.html'), 200
+
+
+@bp.route('/checklinks', methods=['POST'])
 def check_link():
-    """
-    Accepts a url as a query parameter and makes a request to the url to return the status code and status message
-    """
-    url=request.args.get('url')
+    # get the urls from the request body
+    urls = request.get_json()
 
-    if url:
-        try:
-            response=requests.get(url)
-            status_code=response.status_code
-            message=response.reason
-        except requests.exceptions.RequestException as e:
-            status_code=e.response.status_code if e.response else None
-            message=e.strerror if e.strerror else "an error occured"
+    # use multi-threading to make requests to each of the urls
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        results = list(executor.map(make_request, urls))
 
-        result= f'{status_code} {message}'
-
-        return result
-    else:
-        return render_template('checker/deadlinkchecker.html')
+    return jsonify(results)
