@@ -1,7 +1,8 @@
 import os
 import subprocess
 
-from flask import Flask,request
+from flask import Flask, request
+
 
 # create and configure the app
 app = Flask(__name__, instance_relative_config=True)
@@ -23,16 +24,13 @@ def webhook():
         return "Updated Toolforge project successfully", 200
     else:
         return "Wrong event type", 400
-    
-#database
 
+# database
 import db
-
 db.init_app(app)
 
 # register blue print
 import link_checker
 
 app.register_blueprint(link_checker.bp)
-
 
