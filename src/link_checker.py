@@ -1,5 +1,5 @@
 import concurrent.futures
-import utils
+from .utils import make_request
 from flask import Blueprint, request, render_template, jsonify
 
 bp = Blueprint('linkchecker', __name__)
@@ -18,6 +18,6 @@ def check_link():
 
     # use multi-threading to make requests to each of the urls
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        results = list(executor.map(utils.make_request, urls))
+        results = list(executor.map(make_request, urls))
 
     return jsonify(results)
