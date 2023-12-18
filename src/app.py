@@ -2,10 +2,12 @@ import os
 import subprocess
 
 from flask import Flask, request
+from flask_cors import CORS
 
 
 # create and configure the app
 app = Flask(__name__, instance_relative_config=True)
+CORS(app)
 app.config.from_mapping(
     SECRET_KEY=os.getenv('SECRET_KEY'),
     DATABASE=os.path.join(app.instance_path, 'urls.sqlite'),
