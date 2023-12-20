@@ -1,7 +1,6 @@
-//All links in the document
-const allLinks = document
-  .getElementById("bodyContent")
-  .getElementsByClassName("external");
+const allLinks = Array.from(
+  document.querySelector("#bodyContent").querySelectorAll(".external")
+);
 
 function isWmfLink(url) {
   // Accepts a url and checks if url matches any of Wikimedia's domain names
@@ -30,59 +29,39 @@ function isWmfLink(url) {
   return isMatch;
 }
 
-//All non Wikimedia Links
-const externalLinks = [];
+const externalLinks = allLinks
+  .filter((elt) => !isWmfLink(elt.href))
+  .map((elt) => elt.href);
 
-// Iterate through all links to get only external links
-for (let i = 0; i < allLinks.length; i++) {
-  link = allLinks[i].href;
-  if (!isWmfLink(link)) {
-    externalLinks.push(link);
-  }
-}
-
-// Example POST method implementation:
 async function postData(url = "", data) {
-  // Default options are marked with *
+  // function to post data to the python server
   const response = await fetch(url, {
-    method: "POST", // *GET, POST, PUT, DELETE, etc.
-    mode: "cors", // no-cors, *cors, same-origin
-    //cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-    //credentials: "same-origin", // include, *same-origin, omit
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
-      // 'Content-Type': 'application/x-www-form-urlencoded',
     },
-    redirect: "follow", // manual, *follow, error
-    referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-    body: JSON.stringify(data), // body data type must match "Content-Type" header
+    body: JSON.stringify(data),
   });
-  return response.json(); // parses JSON response into native JavaScript objects
+  return response.json();
 }
 
-if (externalLinks.length > 1) {
+// send the external links to the python server
+if (externalLinks.length > 0) {
   postData(
     "https://deadlinkchecker.toolforge.org/checklinks",
     externalLinks
   ).then((data) => {
-    let anArray = [];
-    for (let index = 0; index < allLinks.length; index++) {
-      anArray.push(allLinks[index].href);
-    }
-    for (let index = 0; index < data.length; index++) {
-      let position = anArray.indexOf(data[index].link);
-
-      const status = document.getElementsByClassName("external")[position];
-      // $(".external")[position].append(`<p>${data[index].status_code}</p>`);
-      status.insertAdjacentHTML(
-        "afterend",
-        `<span style="color:red">${data[index].status_code}</span>`
-      );
-    }
+    data.forEach((item) => {
+      if (item.status_code != 200) {
+        //get the item's position
+        const position = allLinks.findIndex((elt) => elt.href == item.link);
+        const status = document.getElementsByClassName("external")[position];
+        status.insertAdjacentHTML(
+          "afterend",
+          `<span style="color:red">${item.status_code}</span>`
+        );
+      }
+    });
   });
 }
 
-// TODO post external links to the python server only if the length of the external links array>1
-// TODOPost external links to the python server
-
-// Use jQuery to prepend a paragraph with the concatenated string
