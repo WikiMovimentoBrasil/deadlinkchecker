@@ -19,6 +19,7 @@ try:
 except OSError:
     pass
 
+
 @app.route("/update-server", methods=["POST"])
 def webhook():
     if request.method == "POST":
@@ -27,12 +28,13 @@ def webhook():
     else:
         return "Wrong event type", 400
 
+
 # database
 import db
+
 db.init_app(app)
 
 # register blue print
 import link_checker
 
 app.register_blueprint(link_checker.bp)
-

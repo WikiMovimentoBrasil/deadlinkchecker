@@ -1,4 +1,4 @@
-import concurrent.futures
+import asyncio
 import utils
 from flask import Blueprint, request, render_template, jsonify
 
@@ -12,12 +12,11 @@ def index():
 
 
 @bp.route('/checklinks', methods=['POST'])
-def check_link():
-    # get the urls from the request body
+async def check_link():
+    # get urls from the request body
     urls = request.get_json()
 
-    # use multi-threading to make requests to each of the urls
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        results = list(executor.map(utils.make_request, urls))
+    tasks = [utils.make_request(url) for url in urls]
+    results = await asyncio.gather(*tasks)
 
     return jsonify(results)
