@@ -1,7 +1,6 @@
-import requests
+import aiohttp
 
-
-def make_request(url):
+async def make_request(url):
     """
     Accepts a url as a query parameter and makes a request to the url to return the status code and status message
 
@@ -12,12 +11,13 @@ def make_request(url):
         url_info(list): A list of dictionaries with the link,status_code and message
     """
     try:
-        response = requests.get(url)
-        status_code = response.status_code
-        message = response.reason
-    except requests.exceptions.RequestException as e:
-        status_code = e.response.status_code if e.response else None
-        message = e.strerror if e.strerror else "unable to connect"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                status_code = response.status
+                message = response.reason
+    except aiohttp.ClientError as e:
+        status_code = getattr(e, 'status', 500)
+        message = "unable to connect"
 
     return {
         "link": url,
