@@ -14,7 +14,7 @@ async def make_request(url):
     """
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=10) as response:
+            async with session.get(url, timeout=5) as response:
                 status_code = response.status
                 message = response.reason
     except aiohttp.ClientError as e:
