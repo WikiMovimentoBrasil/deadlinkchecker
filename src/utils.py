@@ -1,4 +1,6 @@
 import aiohttp
+import asyncio
+
 
 async def make_request(url):
     """
@@ -12,12 +14,15 @@ async def make_request(url):
     """
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
+            async with session.get(url, timeout=10) as response:
                 status_code = response.status
                 message = response.reason
     except aiohttp.ClientError as e:
         status_code = getattr(e, 'status', 500)
         message = "unable to connect"
+    except asyncio.TimeoutError as e:
+        status_code = 599
+        message = "network connection failed"
 
     return {
         "link": url,
