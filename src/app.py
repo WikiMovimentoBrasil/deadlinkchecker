@@ -1,5 +1,4 @@
 from link_checker import bp
-import os
 import subprocess
 
 from quart import Quart, request
