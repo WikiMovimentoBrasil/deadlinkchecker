@@ -19,6 +19,6 @@ def webhook():
 
 
 # register blue print
-from link_checker import bp
+from .link_checker import bp
 
 app.register_blueprint(bp)
