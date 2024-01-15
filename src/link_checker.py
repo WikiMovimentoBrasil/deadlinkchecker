@@ -19,7 +19,7 @@ async def script():
     abs_path = os.path.dirname(os.path.abspath(__file__))
     script_path = os.path.join(abs_path, "static", "script.js")
 
-    return await send_file(script_path, mimetype='application/javascript')
+    return send_file(script_path, mimetype='application/javascript')
 
 
 async def make_request(session, url):
