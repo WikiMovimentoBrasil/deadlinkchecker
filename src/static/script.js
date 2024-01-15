@@ -1,6 +1,6 @@
 class DeadLinkChecker {
   // Variables
-  #allLinks = Array.from(
+  #externalLinksElements = Array.from(
     document.querySelector("#bodyContent").querySelectorAll(".external")
   );
 
@@ -25,17 +25,23 @@ class DeadLinkChecker {
     "^https?:\\/\\/([\\w-.]+)?wikidata\\.org",
     "^https?:\\/\\/secure.wikimedia\\.org",
   ];
-  #externalLinks = this.#allLinks
-    .filter((elt) => !this.#isWmfLink(elt.href))
-    .map((elt) => elt.href);
 
   // Methods
-  #isWmfLink(url) {
-    // Accepts a url and checks if url matches any of Wikimedia's domain names
-    const isMatch = this.#wmfLinks.some((pattern) =>
-      new RegExp(pattern).test(url)
-    );
-    return isMatch;
+
+  #getExternalLinks() {
+    let externalLinks = {};
+    let externalLinksElementsSize = this.#externalLinksElements.length;
+
+    for (let index = 0; index < externalLinksElementsSize; index++) {
+      let url = this.#externalLinksElements[index].href;
+      const iswmfLink = this.#wmfLinks.some((pattern) =>
+        new RegExp(pattern).test(url)
+      );
+      if (!iswmfLink) {
+        externalLinks[index] = url;
+      }
+    }
+    return externalLinks;
   }
 
   async #sendLinks(url = "", data) {
@@ -50,34 +56,55 @@ class DeadLinkChecker {
     return response.json();
   }
 
-  findDeadLinks() {
-    if (this.#externalLinks.length > 0) {
-      this.#sendLinks(
+  #mountResultsDiv(innerhtml) {
+    //Mounts a results dive to the bottom right of the page
+    const resultsDiv = document.createElement("div");
+    resultsDiv.id = "results-div";
+    resultsDiv.innerHTML = `${innerhtml}`;
+    resultsDiv.style.position = "absolute";
+    resultsDiv.style.position = "fixed";
+    resultsDiv.style.bottom = "0px";
+    resultsDiv.style.right = "0px";
+
+    document.getElementById("bodyContent").appendChild(resultsDiv);
+  }
+
+  #processServerdata(item) {
+    const linkElement =
+      document.getElementsByClassName("external text")[position];
+    linkElement.insertAdjacentHTML(
+      "afterend",
+      `<span style="color:red">${item.status_code}</span>`
+    );
+  }
+
+  async findDeadLinks() {
+    const externalLinks = this.#getExternalLinks();
+    console.log(Object.keys(externalLinks).length);
+    if (externalLinks) {
+      const data = await this.#sendLinks(
         "https://deadlinkchecker.toolforge.org/checklinks",
-        this.#externalLinks
-      ).then((data) => {
+        externalLinks
+      );
+      if (data) {
         data.forEach((item) => {
-          if (item.status_code != 200) {
-            //get the item's position
-            const position = this.#allLinks.findIndex(
-              (elt) => elt.href == item.link
-            );
-            const status =
-              document.getElementsByClassName("external")[position];
-            status.insertAdjacentHTML(
-              "afterend",
-              `<span style="color:red">${item.status_code}</span>`
-            );
-          }
+          let position = item.link[0];
+          const status = document.getElementsByClassName("external")[position];
+          status.insertAdjacentHTML(
+            "afterend",
+            `<span style="color:red" title=${item.message}>${item.status_code}</span>`
+          );
         });
-      });
+      } else {
+        // TODO show okay
+      }
     } else {
-      //Display on the page that the page is okay
-      $("#bodyContent").prepend("<p>Page is OK!</p>");
+      // TODO show okay
     }
   }
 }
 
-// TODO start to find the links, once the page is loaded
+//start to find the links, once the page is loaded
 const deadLinkChecker = new DeadLinkChecker();
 deadLinkChecker.findDeadLinks();
+
