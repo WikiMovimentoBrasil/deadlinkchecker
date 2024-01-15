@@ -35,7 +35,7 @@ async def make_request(session, url):
         "link": url,
         "status_code": status_code,
         "status_message": message,
-    }
+    } 
 
 
 @bp.route('/checklinks', methods=['POST'])
@@ -49,7 +49,9 @@ async def check_link():
                  for url in urls.items()]
         results = await asyncio.gather(*tasks)
 
+    # return results only for links whose status_code is not 200
+    filtered_results = [result for result in results if result['status_code'] != 200]
 
     end = time.time()
     print(f"it took {end-start}- seconds to fetch {len(urls)} urls")
-    return jsonify(results)
+    return jsonify(filtered_results)
