@@ -24,7 +24,7 @@ async def script():
 
 async def make_request(session, url):
     try:
-        async with session.get(url, ssl=False) as response:
+        async with session.get(url[1], ssl=False) as response:
             status_code = response.status
             message = response.reason
     except aiohttp.ClientError as e:
@@ -34,7 +34,7 @@ async def make_request(session, url):
     return {
         "link": url,
         "status_code": status_code,
-        "status_message": message
+        "status_message": message,
     }
 
 
@@ -46,8 +46,9 @@ async def check_link():
 
     async with aiohttp.ClientSession() as session:
         tasks = [asyncio.create_task(make_request(session, url))
-                 for url in urls]
+                 for url in urls.items()]
         results = await asyncio.gather(*tasks)
+
 
     end = time.time()
     print(f"it took {end-start}- seconds to fetch {len(urls)} urls")
