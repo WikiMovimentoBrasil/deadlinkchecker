@@ -24,6 +24,7 @@ class DeadLinkChecker {
     "^https?:\\/\\/([\\w-.]+)?wikitravel\\.org",
     "^https?:\\/\\/([\\w-.]+)?wikidata\\.org",
     "^https?:\\/\\/secure.wikimedia\\.org",
+    "^https:\/\/web\.archive\.org\/web\/"
   ];
 
   // Methods
