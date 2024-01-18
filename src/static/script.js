@@ -89,10 +89,18 @@ class DeadLinkChecker {
       if (data) {
         data.forEach((item) => {
           let position = item.link[0];
-          const status = document.getElementsByClassName("external")[position];
-          status.insertAdjacentHTML(
+          const LinkStatus =
+            document.getElementsByClassName("external")[position];
+
+          function getLinkStatusText(errorMessage) {
+            const linkText = `<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                          <image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="16" height="16" />
+                       </svg><span style="color: red;">[${errorMessage}]</span>`;
+            return linkText;
+          }
+          LinkStatus.insertAdjacentHTML(
             "afterend",
-            `<span style="color:red" title=${item.message}>${item.status_code}</span>`
+            getLinkStatusText(item.status_message)
           );
         });
       } else {
@@ -107,4 +115,3 @@ class DeadLinkChecker {
 //start to find the links, once the page is loaded
 const deadLinkChecker = new DeadLinkChecker();
 deadLinkChecker.findDeadLinks();
-
