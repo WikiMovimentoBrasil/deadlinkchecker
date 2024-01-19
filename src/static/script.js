@@ -61,18 +61,32 @@ class DeadLinkChecker {
     //Mounts a results dive to the bottom right of the page
     const resultsDiv = document.createElement("div");
     resultsDiv.id = "results-div";
-    resultsDiv.style.position = "absolute";
     resultsDiv.style.position = "fixed";
     resultsDiv.style.bottom = "0px";
-    resultsDiv.style.right = "0px";
+    resultsDiv.style.right = "5px";
+    resultsDiv.style.padding = "5px";
+    resultsDiv.style.width = "150px";
+    resultsDiv.style.textAlign = "center";
+    resultsDiv.style.backgroundColor = "#ffbfd3";
+    resultsDiv.style.borderRadius = "5px";
 
     document.getElementById("bodyContent").appendChild(resultsDiv);
+  }
+
+  clearResults() {
+    const resultsDiv = document.getElementById("results-div");
+    if (resultsDiv) {
+      resultsDiv.remove();
+    }
   }
 
   #updateResults(message, icon) {
     // get the results div
     const resultsDiv = document.getElementById("results-div");
-    resultsDiv.innerHTML = `<div>${message}</div><div>${icon}</div>`;
+    if (!resultsDiv) {
+      this.mountResultsDiv();
+    }
+    resultsDiv.innerHTML = `<span style="cursor:pointer;position:absolute; top:0px; right:5px" onclick="">&#9746</span><div style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
   }
 
   async findDeadLinks() {
