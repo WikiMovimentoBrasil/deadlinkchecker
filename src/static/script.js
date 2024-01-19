@@ -24,7 +24,7 @@ class DeadLinkChecker {
     "^https?:\\/\\/([\\w-.]+)?wikitravel\\.org",
     "^https?:\\/\\/([\\w-.]+)?wikidata\\.org",
     "^https?:\\/\\/secure.wikimedia\\.org",
-    "^https:\/\/web\.archive\.org\/web\/"
+    "^https://web.archive.org/web/",
   ];
 
   // Methods
@@ -57,11 +57,10 @@ class DeadLinkChecker {
     return response.json();
   }
 
-  #mountResultsDiv(innerhtml) {
+  #mountResultsDiv() {
     //Mounts a results dive to the bottom right of the page
     const resultsDiv = document.createElement("div");
     resultsDiv.id = "results-div";
-    resultsDiv.innerHTML = `${innerhtml}`;
     resultsDiv.style.position = "absolute";
     resultsDiv.style.position = "fixed";
     resultsDiv.style.bottom = "0px";
@@ -70,24 +69,27 @@ class DeadLinkChecker {
     document.getElementById("bodyContent").appendChild(resultsDiv);
   }
 
-  #processServerdata(item) {
-    const linkElement =
-      document.getElementsByClassName("external text")[position];
-    linkElement.insertAdjacentHTML(
-      "afterend",
-      `<span style="color:red">${item.status_code}</span>`
-    );
+  #updateResults(message, icon) {
+    // get the results div
+    const resultsDiv = document.getElementById("results-div");
+    resultsDiv.innerHTML = `<div>${message}</div><div>${icon}</div>`;
   }
 
   async findDeadLinks() {
     const externalLinks = this.#getExternalLinks();
     console.log(Object.keys(externalLinks).length);
+
+    this.#mountResultsDiv(); // create a div for displaying results from the the link checker
     if (externalLinks) {
+      this.#updateResults(
+        "searching...",
+        "<img src='https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif' alt='checking for deadlinks'/>"
+      );
       const data = await this.#sendLinks(
         "https://deadlinkchecker.toolforge.org/checklinks",
         externalLinks
       );
-      if (data) {
+      if (data && data.length > 0) {
         data.forEach((item) => {
           let position = item.link[0];
           const LinkStatus =
@@ -104,11 +106,24 @@ class DeadLinkChecker {
             getLinkStatusText(item.status_message)
           );
         });
+        // display the count of deadlinks
+        this.#updateResults(
+          `${data.length} dead links found`,
+          '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="45" height="45" /></svg>'
+        );
       } else {
-        // TODO show okay
+        // show okay
+        this.#updateResults(
+          "OK!",
+          '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
+        );
       }
     } else {
-      // TODO show okay
+      // show okay
+      this.#updateResults(
+        "OK!",
+        '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
+      );
     }
   }
 }
