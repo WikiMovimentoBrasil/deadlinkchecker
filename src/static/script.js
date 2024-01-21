@@ -67,8 +67,9 @@ class DeadLinkChecker {
     resultsDiv.style.padding = "5px";
     resultsDiv.style.width = "150px";
     resultsDiv.style.textAlign = "center";
-    resultsDiv.style.backgroundColor = "#ffbfd3";
+    resultsDiv.style.backgroundColor = "#e7e7e7";
     resultsDiv.style.borderRadius = "5px";
+    resultsDiv.style.border = "1px solid #80807f";
 
     document.getElementById("bodyContent").appendChild(resultsDiv);
   }
@@ -80,13 +81,15 @@ class DeadLinkChecker {
     }
   }
 
+
   #updateResults(message, icon) {
     // get the results div
     const resultsDiv = document.getElementById("results-div");
     if (!resultsDiv) {
-      this.mountResultsDiv();
+      this.#mountResultsDiv();
     }
-    resultsDiv.innerHTML = `<span style="cursor:pointer;position:absolute; top:0px; right:5px" onclick="">&#9746</span><div style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
+
+    resultsDiv.innerHTML = `<span style="cursor:pointer;position:absolute; top:0px; right:5px" onclick="new DeadlinkChecker().clearResults()">&#9746</span><div style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
   }
 
   async findDeadLinks() {
@@ -96,7 +99,7 @@ class DeadLinkChecker {
     this.#mountResultsDiv(); // create a div for displaying results from the the link checker
     if (externalLinks) {
       this.#updateResults(
-        "searching...",
+        "checking page...",
         "<img src='https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif' alt='checking for deadlinks'/>"
       );
       const data = await this.#sendLinks(
