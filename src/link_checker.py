@@ -3,6 +3,7 @@ import aiohttp
 import os
 import time
 from flask import Blueprint, request, render_template, jsonify, send_file
+from flask_babel import gettext as _
 
 bp = Blueprint('linkchecker', __name__)
 
@@ -19,17 +20,33 @@ async def script():
     abs_path = os.path.dirname(os.path.abspath(__file__))
     script_path = os.path.join(abs_path, "static", "script.js")
 
+
     return send_file(script_path, mimetype='application/javascript')
+
+
+def get_custom_message(status):
+    # creates custom error messages for the status codes
+    if 400 <= status < 500:
+        if status == 400:
+            return _("Bad Request")
+        elif status == 403:
+            return _("Forbidden")
+        else:
+            return _("Not Found")
+    elif 500 <= status < 600:
+        return _("Unable to Connect")
+    else:
+        return _("Unknown Error")
 
 
 async def make_request(session, url):
     try:
         async with session.get(url[1], ssl=False) as response:
             status_code = response.status
-            message = response.reason
+            message = get_custom_message(status_code)
     except aiohttp.ClientError as e:
         status_code = getattr(e, 'status', 500)
-        message = "unable to connect"
+        message = get_custom_message(status_code)
 
     return {
         "link": url,
