@@ -89,7 +89,7 @@ class DeadLinkChecker {
       this.#mountResultsDiv();
     }
 
-    resultsDiv.innerHTML = `<span style="cursor:pointer;position:absolute; top:0px; right:5px" onclick="new DeadlinkChecker().clearResults()">&#9746</span><div style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
+    resultsDiv.innerHTML = `<span style="cursor:pointer;position:absolute; top:0px; right:5px" onclick="this.clearResults()">&#9746</span><div style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
   }
 
   async findDeadLinks() {

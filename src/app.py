@@ -3,11 +3,27 @@ import subprocess
 
 from flask import Flask, request
 from flask_cors import CORS
+from flask_babel import Babel
 
 
 # create and configure the app
-app = Flask(__name__, instance_relative_config=True)
+app = Flask(__name__)
 CORS(app)
+
+app.config.update(
+    LANGUAGES=['en', 'pt'],
+)
+
+
+def get_locale():
+    # gets the locale from the request headers when a request is made
+    return request.accept_languages.best_match(app.config['LANGUAGES'])
+
+babel=Babel(app, get_locale)
+
+# pick configuration variables from the config file
+#app.config.from_pyfile('config.py')
+
 
 @app.route("/update-server", methods=["POST"])
 def webhook():
