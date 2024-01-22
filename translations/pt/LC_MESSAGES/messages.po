@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-01-22 15:02+0300\n"
-"PO-Revision-Date: 2024-01-22 15:03+0300\n"
+"POT-Creation-Date: 2024-01-22 16:43+0300\n"
+"PO-Revision-Date: 2024-01-22 16:48+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pt\n"
 "Language-Team: pt <LL@li.org>\n"
@@ -20,21 +20,21 @@ msgstr ""
 
 #: src/link_checker.py:31
 msgid "Bad Request"
-msgstr "Pedido ruim"
+msgstr ""
 
 #: src/link_checker.py:33
 msgid "Forbidden"
-msgstr "Proibido"
+msgstr ""
 
 #: src/link_checker.py:35
 msgid "Not Found"
-msgstr "Não encontrado"
+msgstr ""
 
 #: src/link_checker.py:37
 msgid "Unable to Connect"
-msgstr "Incapaz de conectar"
+msgstr ""
 
 #: src/link_checker.py:39
 msgid "Unknown Error"
-msgstr "Erro desconhecido"
+msgstr ""
 

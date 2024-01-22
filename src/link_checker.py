@@ -20,7 +20,6 @@ async def script():
     abs_path = os.path.dirname(os.path.abspath(__file__))
     script_path = os.path.join(abs_path, "static", "script.js")
 
-
     return send_file(script_path, mimetype='application/javascript')
 
 
@@ -58,10 +57,13 @@ async def make_request(session, url):
 @bp.route('/checklinks', methods=['POST'])
 async def check_link():
     # get urls from the request body
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:10.0) Gecko/20100101 Firefox/10.0"}
+
     start = time.time()
     urls = request.get_json()
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(headers=headers) as session:
         tasks = [asyncio.create_task(make_request(session, url))
                  for url in urls.items()]
         results = await asyncio.gather(*tasks)
