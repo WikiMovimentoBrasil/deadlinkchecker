@@ -3,13 +3,20 @@ import subprocess
 
 from flask import Flask, request
 from flask_cors import CORS
+import yaml
 
 # create and configure the app
 app = Flask(__name__)
 CORS(app)
 
-# pick configuration variables from the config file
-#app.config.from_pyfile('config.py')
+# Load configuration from YAML file
+__dir__ = os.path.dirname(__file__)
+app.config.update(
+    yaml.safe_load(open(os.path.join(__dir__, 'config.yaml'))))
+
+# @app.route('/start')
+# def start():
+#     return app.config['GREETING']
 
 
 @app.route("/update-server", methods=["POST"])
