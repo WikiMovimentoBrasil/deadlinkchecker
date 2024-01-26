@@ -3,7 +3,6 @@ import aiohttp
 import os
 import time
 from flask import Blueprint, request, render_template, jsonify, send_file
-from flask_babel import gettext as _
 
 bp = Blueprint('linkchecker', __name__)
 
@@ -27,15 +26,15 @@ def get_custom_message(status):
     # creates custom error messages for the status codes
     if 400 <= status < 500:
         if status == 400:
-            return _("Bad Request")
+            return "Bad Request"
         elif status == 403:
-            return _("Forbidden")
+            return "Forbidden"
         else:
-            return _("Not Found")
+            return "Not Found"
     elif 500 <= status < 600:
-        return _("Unable to Connect")
+        return "Unable to Connect"
     else:
-        return _("Unknown Error")
+        return "Unknown Error"
 
 
 async def make_request(session, url):
@@ -52,7 +51,6 @@ async def make_request(session, url):
         "status_code": status_code,
         "status_message": message,
     }
-
 
 @bp.route('/checklinks', methods=['POST'])
 async def check_link():
