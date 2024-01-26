@@ -27,6 +27,20 @@ class DeadLinkChecker {
     "^https://web.archive.org/web/",
   ];
 
+  languageTexts={
+    
+  }
+
+  supportedLanguages = ["pt", "en"];
+  userLanguage;
+
+  constructor() {
+    this.userLanguage = this.supportedLanguages.includes(
+      mw.config.get("wgUserLanguage")
+    )
+      ? mw.config.get("wgUserLanguage")
+      : "en";
+  }
   // Methods
 
   #getExternalLinks() {
@@ -80,7 +94,6 @@ class DeadLinkChecker {
       resultsDiv.remove();
     }
   }
-
 
   #updateResults(message, icon) {
     // get the results div
