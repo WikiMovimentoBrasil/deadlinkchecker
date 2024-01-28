@@ -14,10 +14,6 @@ __dir__ = os.path.dirname(__file__)
 app.config.update(
     yaml.safe_load(open(os.path.join(__dir__, 'config.yaml'))))
 
-# @app.route('/start')
-# def start():
-#     return app.config['GREETING']
-
 
 @app.route("/update-server", methods=["POST"])
 def webhook():
@@ -29,8 +25,8 @@ def webhook():
 
 
 # register blue print
-#import link_checker
-from .link_checker import bp
+import link_checker
+#from .link_checker import bp
 
-#app.register_blueprint(link_checker.bp)
-app.register_blueprint(bp)
+app.register_blueprint(link_checker.bp)
+#app.register_blueprint(bp)
