@@ -26,15 +26,15 @@ def get_custom_message(status):
     # creates custom error messages for the status codes
     if 400 <= status < 500:
         if status == 400:
-            return "Bad Request"
+            return "bad_request"
         elif status == 403:
-            return "Forbidden"
+            return "forbidden"
         else:
-            return "Not Found"
+            return "not_found"
     elif 500 <= status < 600:
-        return "Unable to Connect"
+        return "unable_to_connect"
     else:
-        return "Unknown Error"
+        return "unknown_error"
 
 
 async def make_request(session, url):
@@ -52,6 +52,7 @@ async def make_request(session, url):
         "status_message": message,
     }
 
+
 @bp.route('/checklinks', methods=['POST'])
 async def check_link():
     # get urls from the request body
@@ -61,7 +62,8 @@ async def check_link():
     start = time.time()
     urls = request.get_json()
 
-    async with aiohttp.ClientSession(headers=headers) as session:
+    conn = aiohttp.TCPConnector(limit=30)
+    async with aiohttp.ClientSession(connector=conn, headers=headers) as session:
         tasks = [asyncio.create_task(make_request(session, url))
                  for url in urls.items()]
         results = await asyncio.gather(*tasks)

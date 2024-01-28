@@ -26,13 +26,38 @@ class DeadLinkChecker {
     "^https?:\\/\\/secure.wikimedia\\.org",
     "^https://web.archive.org/web/",
   ];
+  controller; //controller that will be used to abort the request
 
-  languageTexts={
-    
-  }
-
+  userLanguage; // The user's language on wikipedia
   supportedLanguages = ["pt", "en"];
-  userLanguage;
+  languageTexts = {
+    en: {
+      bad_request: "Bad Request",
+      forbidden: "Forbidden",
+      not_found: "Not Found",
+      unable_to_connect: "Unable to Connect",
+      unknown_error: "Unknown Error",
+      checkLinks: "Check Links",
+      stopLinkChecker: "Stop link checker",
+      checkingPage: "checking page...",
+      ok: "OK!",
+      deadLinksFound: "dead links found",
+      checkingDeadlinks: "searching page for dead links",
+    },
+    pt: {
+      bad_request: "Pedido ruim",
+      forbidden: "Proibido",
+      not_found: "Não encontrado",
+      unable_to_connect: "Incapaz de conectar",
+      unknown_error: "Erro desconhecido",
+      checkLinks: "Verifique links",
+      stopLinkChecker: "Parar verificador de link",
+      checkingPage: "página de verificação...",
+      ok: "OK!",
+      deadLinksFound: "links mortos encontrados",
+      checkingDeadlinks: "pesquisando página por links mortos",
+    },
+  };
 
   constructor() {
     this.userLanguage = this.supportedLanguages.includes(
@@ -60,6 +85,10 @@ class DeadLinkChecker {
   }
 
   async #sendLinks(url = "", data) {
+    // set up controller and abort signal
+    this.controller = new AbortController();
+    let signal = this.controller.signal;
+
     // function to post links to the python server
     const response = await fetch(url, {
       method: "POST",
@@ -67,6 +96,7 @@ class DeadLinkChecker {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+      signal,
     });
     return response.json();
   }
@@ -102,7 +132,11 @@ class DeadLinkChecker {
       this.#mountResultsDiv();
     }
 
-    resultsDiv.innerHTML = `<span style="cursor:pointer;position:absolute; top:0px; right:5px" onclick="this.clearResults()">&#9746</span><div style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
+    resultsDiv.innerHTML = `<span id="deadlinkchecker_cancel" style="cursor:pointer;position:absolute; top:0px; right:5px">&#9746</span><div style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
+
+    document
+      .getElementById("deadlinkchecker_cancel")
+      .addEventListener("click", this.clearResults);
   }
 
   async findDeadLinks() {
@@ -112,8 +146,10 @@ class DeadLinkChecker {
     this.#mountResultsDiv(); // create a div for displaying results from the the link checker
     if (externalLinks) {
       this.#updateResults(
-        "checking page...",
-        "<img src='https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif' alt='checking for deadlinks'/>"
+        this.languageTexts[this.userLanguage]["checkingPage"],
+        `<img src='https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif' alt='${
+          this.languageTexts[this.userLanguage]["checkingDeadlinks"]
+        }'>`
       );
       const data = await this.#sendLinks(
         "https://deadlinkchecker.toolforge.org/checklinks",
@@ -133,25 +169,25 @@ class DeadLinkChecker {
           }
           LinkStatus.insertAdjacentHTML(
             "afterend",
-            getLinkStatusText(item.status_message)
+            getLinkStatusText(this.languageTexts[this.userLanguage][item.status_message])
           );
         });
         // display the count of deadlinks
         this.#updateResults(
-          `${data.length} dead links found`,
+          `${data.length} ${this.languageTexts[this.userLanguage]["deadLinksFound"]}`,
           '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="45" height="45" /></svg>'
         );
       } else {
         // show okay
         this.#updateResults(
-          "OK!",
+          this.languageTexts[this.userLanguage]["ok"],
           '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
         );
       }
     } else {
       // show okay
       this.#updateResults(
-        "OK!",
+        this.languageTexts[this.userLanguage]["ok"],
         '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
       );
     }
@@ -159,5 +195,57 @@ class DeadLinkChecker {
 }
 
 //start to find the links, once the page is loaded
-const deadLinkChecker = new DeadLinkChecker();
-deadLinkChecker.findDeadLinks();
+const startCheckingLinks = () => {
+  let deadLinkChecker;
+  let controller;
+
+  if (!deadLinkChecker) {
+    console.log("deadlinkchecker is falsey");
+    // Add a portlet link to start running the script
+    mw.util.addPortletLink(
+      "p-tb",
+      "#",
+      "Check links",
+      "startDeadLinkChecker",
+      "start checking links",
+      document.getElementById("t-whatlinkshere")
+    );
+
+    // Add an event listener to the portlet to start running the script
+    document
+      .getElementById("startDeadLinkChecker")
+      .addEventListener("click", () => {
+        deadLinkChecker = new DeadLinkChecker();
+        deadLinkChecker.findDeadLinks();
+      });
+  } else {
+    // Add a portlet link to stop running the script
+    controller = deadLinkChecker.controller;
+    if (controller) {
+      // Add a portlet link to stop running the script
+      mw.util.addPortletLink(
+        "p-tb",
+        "#",
+        "Stop link checker",
+        "stopDeadLinkChecker",
+        "stop checking links",
+        document.getElementById("t-whatlinkshere")
+      );
+
+      // Add an event listener to the portlet to stop running the script
+      document
+        .getElementById("stopDeadLinkChecker")
+        .addEventListener("click", () => {
+          controller.abort();
+          deadLinkChecker = "";
+        });
+
+      console.log("Controller block executed");
+    }
+
+    console.log("deadlinkchecker is truthy");
+  }
+};
+//let deadLinkChecker = new DeadLinkChecker();
+//deadLinkChecker.findDeadLinks();
+startCheckingLinks();
