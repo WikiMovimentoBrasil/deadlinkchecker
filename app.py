@@ -25,6 +25,8 @@ app.add_middleware(
 )
 
 # update toolforge
+
+
 @app.post("/update-server")
 def webhook():
     subprocess.check_output(["git", "pull", "origin", "main"])
@@ -51,6 +53,7 @@ def get_custom_message(status):
     else:
         return "unknown_error"
 
+
 async def make_request(client, url):
     try:
         response = await client.head(url[1])
@@ -74,7 +77,7 @@ async def check_links(urls: dict):
 
     headers = {
         "User-agent": "Mozilla/5.0 (X11; Linux i686; rv:10.0) Gecko/20100101 Firefox/10.0"}
-    async with httpx.AsyncClient(verify=False, headers=headers) as client:
+    async with httpx.AsyncClient(verify=False, headers=headers, follow_redirects=True) as client:
         tasks = [asyncio.ensure_future(make_request(client, url))
                  for url in urls.items()]
         results = await asyncio.gather(*tasks)
