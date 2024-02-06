@@ -1,3 +1,6 @@
+let controller;
+let checking = "IDLE";
+
 class DeadLinkChecker {
   // Variables
   #externalLinksElements = Array.from(
@@ -26,7 +29,6 @@ class DeadLinkChecker {
     "^https?:\\/\\/secure.wikimedia\\.org",
     "^https://web.archive.org/web/",
   ];
-  controller; //controller that will be used to abort the request
 
   userLanguage; // The user's language on wikipedia
   supportedLanguages = ["pt", "en"];
@@ -86,8 +88,8 @@ class DeadLinkChecker {
 
   async #sendLinks(url = "", data) {
     // set up controller and abort signal
-    this.controller = new AbortController();
-    let signal = this.controller.signal;
+    controller = new AbortController();
+    let signal = controller.signal;
 
     // function to post links to the python server
     const response = await fetch(url, {
@@ -169,12 +171,16 @@ class DeadLinkChecker {
           }
           LinkStatus.insertAdjacentHTML(
             "afterend",
-            getLinkStatusText(this.languageTexts[this.userLanguage][item.status_message])
+            getLinkStatusText(
+              this.languageTexts[this.userLanguage][item.status_message]
+            )
           );
         });
         // display the count of deadlinks
         this.#updateResults(
-          `${data.length} ${this.languageTexts[this.userLanguage]["deadLinksFound"]}`,
+          `${data.length} ${
+            this.languageTexts[this.userLanguage]["deadLinksFound"]
+          }`,
           '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="45" height="45" /></svg>'
         );
       } else {
@@ -194,35 +200,46 @@ class DeadLinkChecker {
   }
 }
 
-//start to find the links, once the page is loaded
-const startCheckingLinks = () => {
-  let deadLinkChecker;
-  let controller;
+class DeadlinkCheckerSingleton {
+  static instance = null;
 
-  if (!deadLinkChecker) {
-    console.log("deadlinkchecker is falsey");
-    // Add a portlet link to start running the script
-    mw.util.addPortletLink(
-      "p-tb",
-      "#",
-      "Check links",
-      "startDeadLinkChecker",
-      "start checking links",
-      document.getElementById("t-whatlinkshere")
+  constructor() {}
+
+  static startChecking() {
+    if (!DeadlinkCheckerSingleton.instance) {
+      DeadlinkCheckerSingleton.instance = new DeadLinkChecker();
+      DeadlinkCheckerSingleton.instance.findDeadLinks();
+    }
+    checking = "CHECKING";
+    return DeadlinkCheckerSingleton.instance;
+  }
+
+  static stopChecking() {
+    controller.abort();
+    DeadlinkCheckerSingleton.instance = null;
+    checking = "IDLE";
+  }
+}
+
+function createCheckLink() {
+  return new Promise(function (resolve, reject) {
+    // function ...
+    resolve(
+      mw.util.addPortletLink(
+        "p-tb",
+        "#",
+        "Check links",
+        "startDeadLinkChecker",
+        "start checking links",
+        document.getElementById("t-whatlinkshere")
+      )
     );
+  });
+}
 
-    // Add an event listener to the portlet to start running the script
-    document
-      .getElementById("startDeadLinkChecker")
-      .addEventListener("click", () => {
-        deadLinkChecker = new DeadLinkChecker();
-        deadLinkChecker.findDeadLinks();
-      });
-  } else {
-    // Add a portlet link to stop running the script
-    controller = deadLinkChecker.controller;
-    if (controller) {
-      // Add a portlet link to stop running the script
+function stopCheckLink() {
+  return new Promise(function (resolve, reject) {
+    resolve(
       mw.util.addPortletLink(
         "p-tb",
         "#",
@@ -230,22 +247,25 @@ const startCheckingLinks = () => {
         "stopDeadLinkChecker",
         "stop checking links",
         document.getElementById("t-whatlinkshere")
-      );
+      )
+    );
+  });
+}
 
-      // Add an event listener to the portlet to stop running the script
+
+
+(function () {
+  if (checking === "CHECKING") {
+    stopCheckLink().then(() =>
       document
         .getElementById("stopDeadLinkChecker")
-        .addEventListener("click", () => {
-          controller.abort();
-          deadLinkChecker = "";
-        });
-
-      console.log("Controller block executed");
-    }
-
-    console.log("deadlinkchecker is truthy");
+        .addEventListener("click", DeadlinkCheckerSingleton.stopChecking)
+    );
+  } else {
+    createCheckLink().then(() =>
+      document
+        .getElementById("startDeadLinkChecker")
+        .addEventListener("click", DeadlinkCheckerSingleton.startChecking)
+    );
   }
-};
-//let deadLinkChecker = new DeadLinkChecker();
-//deadLinkChecker.findDeadLinks();
-startCheckingLinks();
+})();
