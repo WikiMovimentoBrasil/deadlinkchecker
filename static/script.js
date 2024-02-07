@@ -134,57 +134,88 @@ class DeadLinkChecker {
       this.#mountResultsDiv();
     }
 
-    resultsDiv.innerHTML = `<span id="deadlinkchecker_cancel" style="cursor:pointer;position:absolute; top:0px; right:5px">&#9746</span><div style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
+    resultsDiv.innerHTML = `<span id="deadlinkchecker_cancel" style="cursor:pointer;position:absolute; top:0px; right:5px">&#9746</span><div id="deadlinkfindermsg" style="font-family: inherit; ">${message}</div><div style="margin-left:auto; margin-right:auto">${icon}</div>`;
 
     document
       .getElementById("deadlinkchecker_cancel")
       .addEventListener("click", this.clearResults);
   }
 
+  #batchLinks(links) {
+    const batch_size = 50;
+    const batches = [];
+    const keys = Object.keys(links);
+
+    if (keys.length > batch_size) {
+      for (let i = 0; i < keys.length; i += batch_size) {
+        const batch = {};
+        for (let j = i; j < i + batch_size && j < keys.length; j++) {
+          batch[keys[j]] = links[keys[j]];
+        }
+        batches.push(batch);
+      }
+    } else {
+      batches.push(links);
+    }
+    return batches;
+  }
+
   async findDeadLinks() {
     const externalLinks = this.#getExternalLinks();
     console.log(Object.keys(externalLinks).length);
+    const batches = this.#batchLinks(externalLinks);
 
     this.#mountResultsDiv(); // create a div for displaying results from the the link checker
-    if (externalLinks) {
+    if (Object.keys(batches[0]).length > 0) {
       this.#updateResults(
         this.languageTexts[this.userLanguage]["checkingPage"],
         `<img src='https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif' alt='${
           this.languageTexts[this.userLanguage]["checkingDeadlinks"]
         }'>`
       );
-      const data = await this.#sendLinks(
-        "https://deadlinkchecker.toolforge.org/checklinks",
-        externalLinks
-      );
-      if (data && data.length > 0) {
-        data.forEach((item) => {
-          let position = item.link[0];
-          const LinkStatus =
-            document.getElementsByClassName("external")[position];
 
-          function getLinkStatusText(errorMessage) {
-            const linkText = `<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                          <image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="16" height="16" />
-                       </svg><span style="color: red;">[${errorMessage}]</span>`;
-            return linkText;
-          }
-          LinkStatus.insertAdjacentHTML(
-            "afterend",
-            getLinkStatusText(
-              this.languageTexts[this.userLanguage][item.status_message]
-            )
-          );
-        });
+      let deadLinkCount = 0;
+      for (let i = 0; i < batches.length; i++) {
+        const data = await this.#sendLinks(
+          "https://deadlinkchecker.toolforge.org/checklinks",
+          batches[i]
+        );
+
+        if (data && data.length > 0) {
+          data.forEach((item) => {
+            let position = item.link[0];
+            const LinkStatus =
+              document.getElementsByClassName("external")[position];
+
+            function getLinkStatusText(errorMessage) {
+              const linkText = `<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                            <image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="16" height="16" />
+                         </svg><span style="color: red;">[${errorMessage}]</span>`;
+              return linkText;
+            }
+            LinkStatus.insertAdjacentHTML(
+              "afterend",
+              getLinkStatusText(
+                this.languageTexts[this.userLanguage][item.status_message]
+              )
+            );
+          });
+          // update the message with the number of dead links
+          deadLinkCount += data.length;
+          let messageElement = document.getElementById("deadlinkfindermsg");
+          messageElement.textContent = deadLinkCount;
+        }
+      }
+
+      if (deadLinkCount > 0) {
         // display the count of deadlinks
         this.#updateResults(
-          `${data.length} ${
+          `${deadLinkCount} ${
             this.languageTexts[this.userLanguage]["deadLinksFound"]
           }`,
           '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="45" height="45" /></svg>'
         );
       } else {
-        // show okay
         this.#updateResults(
           this.languageTexts[this.userLanguage]["ok"],
           '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
@@ -251,8 +282,6 @@ function stopCheckLink() {
     );
   });
 }
-
-
 
 (function () {
   if (checking === "CHECKING") {

@@ -27,7 +27,7 @@ async def life_span(app: FastAPI):
     redis = await get_redis()
     yield
     # close redis on application shut down
-    redis.close()
+    await redis.close()
 
 
 # fastapi instance
@@ -93,26 +93,23 @@ async def make_request(client, url):
 
 
 async def obtain_hash(urls):
-    hashing_algo = hashlib.sha256()
-    return hashing_algo.hexdigest(urls)
+    hash = hashlib.sha256(urls.encode()).hexdigest()
+    return hash
 
 
 @app.post("/checklinks", response_class=JSONResponse)
 async def check_links(urls: dict):
     # check links route
-    links_hash = await obtain_hash(urls)
-    return links_hash
-    # start = time.time()
+    start = time.time()
+    headers = {
+        "User-agent": "Mozilla/5.0 (X11; Linux i686; rv:10.0) Gecko/20100101 Firefox/10.0"}
+    async with httpx.AsyncClient(verify=False, headers=headers, follow_redirects=True) as client:
+        tasks = [asyncio.ensure_future(make_request(client, url))
+                 for url in urls.items()]
+        results = await asyncio.gather(*tasks)
 
-    # headers = {
-    #     "User-agent": "Mozilla/5.0 (X11; Linux i686; rv:10.0) Gecko/20100101 Firefox/10.0"}
-    # async with httpx.AsyncClient(verify=False, headers=headers, follow_redirects=True) as client:
-    #     tasks = [asyncio.ensure_future(make_request(client, url))
-    #              for url in urls.items()]
-    #     results = await asyncio.gather(*tasks)
-
-    # filtered_results = [
-    #     result for result in results if result['status_code'] != 200]
-    # end = time.time()
-    # print(f'it took {end-start} seconds to fetch {len(urls)} urls ')
-    # return filtered_results
+    filtered_results = [
+        result for result in results if result['status_code'] != 200]
+    end = time.time()
+    print(f'it took {end-start} seconds to fetch {len(urls)} urls ')
+    return filtered_results
