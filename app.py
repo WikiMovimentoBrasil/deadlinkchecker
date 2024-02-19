@@ -4,14 +4,17 @@ import subprocess
 import os
 import hashlib
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from contextlib import asynccontextmanager
 
+from starlette.middleware.sessions import SessionMiddleware
+
 import httpx
-# import aioredis
+import yaml
+import mwoauth
 from redis import asyncio as aioredis
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost")
@@ -55,10 +58,50 @@ def webhook():
     return "Updated Toolforge project successfully", 200
 
 
+def load_yaml():
+    """Load the contents of the yaml file as JSON"""
+    try:
+        with open("config.yaml", "r") as config:
+            data = yaml.safe_load(config)
+            return data
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="config file not found")
+    except yaml.YAMLError as e:
+        raise HTTPException(
+            status_code=500, detail="error loading the config file")
+
+
 # Render the index page
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return open("templates/index.html").read()
+
+
+@app.get("/login")
+async def login(request: Request):
+    """Initiate Oauth login
+
+    get the consumer token from the Media Wiki server and redirect the user to the Media Wiki server to sign the request
+    """
+    config = load_yaml()
+    consumer_token = mwoauth.ConsumerToken(
+        config["CONSUMER_KEY"], config["CONSUMER_SECRET"])
+
+    try:
+        redirect, request_token = mwoauth.initiate(
+            config["OAUTH_MWURI"], consumer_token)
+
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Media Wiki Oauth handshake failed")
+
+    else:
+        request.session["request_token"] = dict(
+            zip(request_token._fields, request_token))
+        # request_token=dict(
+        #     zip(request_token._fields, request_token))
+        # return RedirectResponse(url=redirect)
+        return redirect
 
 
 def get_custom_message(status):
