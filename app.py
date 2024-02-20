@@ -126,7 +126,7 @@ async def oauth_callback(request: Request):
             SOCIAL_AUTH_MEDIAWIKI_URL,
             consumer_token,
             mwoauth.RequestToken(**request.session['request_token']),
-            request.query_params)
+            str(request.query_params))
 
         identity = mwoauth.identify(
             SOCIAL_AUTH_MEDIAWIKI_URL, consumer_token, access_token)
