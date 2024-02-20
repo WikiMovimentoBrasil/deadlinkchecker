@@ -87,7 +87,6 @@ async def login(request: Request):
 
     get the consumer token from the Media Wiki server and redirect the user to the Media Wiki server to sign the request
     """
-    config = load_yaml()
     consumer_token = mwoauth.ConsumerToken(
         SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)
 
