@@ -26,21 +26,6 @@ SOCIAL_AUTH_MEDIAWIKI_URL = 'https://meta.wikimedia.org/w/index.php'
 SOCIAL_AUTH_MEDIAWIKI_CALLBACK = 'http://127.0.0.1:8080/oauth/complete/mediawiki/'
 SESSION_SECRET=os.environ.get("SESSION_SECRET")
 
-def load_yaml():
-    """Load the contents of the yaml file as JSON"""
-    try:
-        with open("config.yaml", "r") as config:
-            data = yaml.safe_load(config)
-            return data
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="config file not found")
-    except yaml.YAMLError as e:
-        raise HTTPException(
-            status_code=500, detail="error loading the config file")
-    
-config=load_yaml()
-
-
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost")
 
 
