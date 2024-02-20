@@ -20,11 +20,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SOCIAL_AUTH_MEDIAWIKI_KEY = os.environ.get("SOCIAL_AUTH_MEDIAWIKI_KEY", "dummy-default-value")
-SOCIAL_AUTH_MEDIAWIKI_SECRET = os.environ.get("SOCIAL_AUTH_MEDIAWIKI_SECRET", "dummy-default-value")
+SOCIAL_AUTH_MEDIAWIKI_KEY = os.environ.get(
+    "SOCIAL_AUTH_MEDIAWIKI_KEY", "dummy-default-value")
+SOCIAL_AUTH_MEDIAWIKI_SECRET = os.environ.get(
+    "SOCIAL_AUTH_MEDIAWIKI_SECRET", "dummy-default-value")
 SOCIAL_AUTH_MEDIAWIKI_URL = 'https://meta.wikimedia.org/w/index.php'
 SOCIAL_AUTH_MEDIAWIKI_CALLBACK = 'http://127.0.0.1:8080/oauth/complete/mediawiki/'
-SESSION_SECRET=os.environ.get("SESSION_SECRET")
+SESSION_SECRET = os.environ.get("SESSION_SECRET")
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost")
 
@@ -59,12 +61,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.middleware("http")
 async def some_middleware(request: Request, call_next):
     response = await call_next(request)
     session = request.cookies.get('session')
     if session:
-        response.set_cookie(key=SESSION_SECRET, value=request.cookies.get('session'), httponly=True)
+        response.set_cookie(
+            key=SESSION_SECRET, value=request.cookies.get('session'), httponly=True)
     return response
 # update toolforge
 
@@ -104,37 +108,38 @@ async def login(request: Request):
         # request_token=dict(
         #     zip(request_token._fields, request_token))
         return RedirectResponse(url=redirect)
-        #return redirect
-    
+        # return redirect
 
-# @app.route('/oauth-callback')
-# def oauth_callback():
-#     """OAuth handshake callback."""
-#     if 'request_token' not in flask.session:
-#         flask.flash(u'OAuth callback failed. Are cookies disabled?')
-#         return flask.redirect(flask.url_for('index'))
 
-#     consumer_token = mwoauth.ConsumerToken(
-#         app.config['CONSUMER_KEY'], app.config['CONSUMER_SECRET'])
+@app.get('/oauth-callback')
+async def oauth_callback(request: Request):
+    """OAuth handshake callback."""
+    if 'request_token' not in request.session:
+        raise HTTPException(
+            status_code=400, detail="Media Wiki oauth handshake failed")
 
-#     try:
-#         access_token = mwoauth.complete(
-#             app.config['OAUTH_MWURI'],
-#             consumer_token,
-#             mwoauth.RequestToken(**flask.session['request_token']),
-#             flask.request.query_string)
+    consumer_token = mwoauth.ConsumerToken(
+        SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)
 
-#         identity = mwoauth.identify(
-#             app.config['OAUTH_MWURI'], consumer_token, access_token)    
-#     except Exception:
-#         app.logger.exception('OAuth authentication failed')
-    
-#     else:
-#         flask.session['access_token'] = dict(zip(
-#             access_token._fields, access_token))
-#         flask.session['username'] = identity['username']
+    try:
+        access_token = mwoauth.complete(
+            SOCIAL_AUTH_MEDIAWIKI_URL,
+            consumer_token,
+            mwoauth.RequestToken(**request.session['request_token']),
+            request.query_params)
 
-#     return flask.redirect(flask.url_for('index'))
+        identity = mwoauth.identify(
+            SOCIAL_AUTH_MEDIAWIKI_URL, consumer_token, access_token)
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Media Wiki oauth authentication failed")
+
+    else:
+        request.session['access_token'] = dict(zip(
+            access_token._fields, access_token))
+        request.session['username'] = identity['username']
+
+    return f"{identity}"
 
 
 def get_custom_message(status):
