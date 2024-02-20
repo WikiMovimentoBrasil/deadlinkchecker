@@ -17,6 +17,20 @@ import yaml
 import mwoauth
 from redis import asyncio as aioredis
 
+def load_yaml():
+    """Load the contents of the yaml file as JSON"""
+    try:
+        with open("config.yaml", "r") as config:
+            data = yaml.safe_load(config)
+            return data
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="config file not found")
+    except yaml.YAMLError as e:
+        raise HTTPException(
+            status_code=500, detail="error loading the config file")
+    
+config=load_yaml()
+
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost")
 
 
@@ -35,6 +49,7 @@ async def life_span(app: FastAPI):
 
 # fastapi instance
 app = FastAPI(lifespan=life_span)
+app.add_middleware(SessionMiddleware, secret_key=config["SECRET"])
 
 # mounting static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -49,6 +64,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def some_middleware(request: Request, call_next):
+    response = await call_next(request)
+    session = request.cookies.get('session')
+    if session:
+        response.set_cookie(key='session', value=request.cookies.get('session'), httponly=True)
+    return response
 # update toolforge
 
 
@@ -56,19 +78,6 @@ app.add_middleware(
 def webhook():
     subprocess.check_output(["git", "pull", "origin", "main"])
     return "Updated Toolforge project successfully", 200
-
-
-def load_yaml():
-    """Load the contents of the yaml file as JSON"""
-    try:
-        with open("config.yaml", "r") as config:
-            data = yaml.safe_load(config)
-            return data
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="config file not found")
-    except yaml.YAMLError as e:
-        raise HTTPException(
-            status_code=500, detail="error loading the config file")
 
 
 # Render the index page
