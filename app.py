@@ -103,8 +103,38 @@ async def login(request: Request):
             zip(request_token._fields, request_token))
         # request_token=dict(
         #     zip(request_token._fields, request_token))
-        # return RedirectResponse(url=redirect)
-        return redirect
+        return RedirectResponse(url=redirect)
+        #return redirect
+    
+
+# @app.route('/oauth-callback')
+# def oauth_callback():
+#     """OAuth handshake callback."""
+#     if 'request_token' not in flask.session:
+#         flask.flash(u'OAuth callback failed. Are cookies disabled?')
+#         return flask.redirect(flask.url_for('index'))
+
+#     consumer_token = mwoauth.ConsumerToken(
+#         app.config['CONSUMER_KEY'], app.config['CONSUMER_SECRET'])
+
+#     try:
+#         access_token = mwoauth.complete(
+#             app.config['OAUTH_MWURI'],
+#             consumer_token,
+#             mwoauth.RequestToken(**flask.session['request_token']),
+#             flask.request.query_string)
+
+#         identity = mwoauth.identify(
+#             app.config['OAUTH_MWURI'], consumer_token, access_token)    
+#     except Exception:
+#         app.logger.exception('OAuth authentication failed')
+    
+#     else:
+#         flask.session['access_token'] = dict(zip(
+#             access_token._fields, access_token))
+#         flask.session['username'] = identity['username']
+
+#     return flask.redirect(flask.url_for('index'))
 
 
 def get_custom_message(status):
