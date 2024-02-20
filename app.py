@@ -16,6 +16,15 @@ import httpx
 import yaml
 import mwoauth
 from redis import asyncio as aioredis
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SOCIAL_AUTH_MEDIAWIKI_KEY = os.environ.get("SOCIAL_AUTH_MEDIAWIKI_KEY", "dummy-default-value")
+SOCIAL_AUTH_MEDIAWIKI_SECRET = os.environ.get("SOCIAL_AUTH_MEDIAWIKI_SECRET", "dummy-default-value")
+SOCIAL_AUTH_MEDIAWIKI_URL = 'https://meta.wikimedia.org/w/index.php'
+SOCIAL_AUTH_MEDIAWIKI_CALLBACK = 'http://127.0.0.1:8080/oauth/complete/mediawiki/'
+SESSION_SECRET=os.environ.get("SESSION_SECRET")
 
 def load_yaml():
     """Load the contents of the yaml file as JSON"""
@@ -30,6 +39,7 @@ def load_yaml():
             status_code=500, detail="error loading the config file")
     
 config=load_yaml()
+
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost")
 
@@ -49,7 +59,7 @@ async def life_span(app: FastAPI):
 
 # fastapi instance
 app = FastAPI(lifespan=life_span)
-app.add_middleware(SessionMiddleware, secret_key=config["SECRET"])
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 # mounting static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -69,7 +79,7 @@ async def some_middleware(request: Request, call_next):
     response = await call_next(request)
     session = request.cookies.get('session')
     if session:
-        response.set_cookie(key='session', value=request.cookies.get('session'), httponly=True)
+        response.set_cookie(key=SESSION_SECRET, value=request.cookies.get('session'), httponly=True)
     return response
 # update toolforge
 
@@ -94,11 +104,11 @@ async def login(request: Request):
     """
     config = load_yaml()
     consumer_token = mwoauth.ConsumerToken(
-        config["CONSUMER_KEY"], config["CONSUMER_SECRET"])
+        SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)
 
     try:
         redirect, request_token = mwoauth.initiate(
-            config["OAUTH_MWURI"], consumer_token)
+            SOCIAL_AUTH_MEDIAWIKI_URL, consumer_token)
 
     except Exception:
         raise HTTPException(
