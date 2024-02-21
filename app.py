@@ -69,10 +69,10 @@ async def some_middleware(request: Request, call_next):
         response.set_cookie(
             key=SESSION_SECRET, value=request.cookies.get('session'), httponly=True)
     return response
-# update toolforge
 
 
 @app.post("/update-server")
+# update toolforge
 def webhook():
     subprocess.check_output(["git", "pull", "origin", "main"])
     return "Updated Toolforge project successfully", 200
@@ -104,10 +104,8 @@ async def login(request: Request):
     else:
         request.session["request_token"] = dict(
             zip(request_token._fields, request_token))
-        # request_token=dict(
-        #     zip(request_token._fields, request_token))
+        
         return RedirectResponse(url=redirect)
-        # return redirect
 
 
 @app.get('/oauth-callback')
