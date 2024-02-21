@@ -13,7 +13,6 @@ from contextlib import asynccontextmanager
 from starlette.middleware.sessions import SessionMiddleware
 
 import httpx
-import yaml
 import mwoauth
 from redis import asyncio as aioredis
 from dotenv import load_dotenv
