@@ -8,9 +8,10 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     username = Column(String(50))
+    session_Id=Column(String(50))
     last_updated = Column(
         TIMESTAMP,
         server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
         server_onupdate=FetchedValue()
     )
-    link_count = Column(Integer)
+    link_count = Column(Integer,nullable=True)
