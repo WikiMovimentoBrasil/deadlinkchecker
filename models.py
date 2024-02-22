@@ -7,7 +7,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(50),unique=True).prefix_with('IGNORE')
+    username = Column(String(50),unique=True)
     session_Id=Column(String(50),unique=True)
     last_updated = Column(
         TIMESTAMP,
