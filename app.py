@@ -4,7 +4,7 @@ import subprocess
 import os
 import hashlib
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -17,7 +17,25 @@ import mwoauth
 from redis import asyncio as aioredis
 from dotenv import load_dotenv
 
+from sqlalchemy.orm import Session
+from db import SessionLocal, engine
+import models
+# create tables
+models.Base.metadata.create_all(bind=engine)
+
+# load environment variables
 load_dotenv()
+
+# Dependency
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 SOCIAL_AUTH_MEDIAWIKI_KEY = os.environ.get(
     "SOCIAL_AUTH_MEDIAWIKI_KEY", "dummy-default-value")
@@ -104,12 +122,12 @@ async def login(request: Request):
     else:
         request.session["request_token"] = dict(
             zip(request_token._fields, request_token))
-        
+
         return RedirectResponse(url=redirect)
 
 
 @app.get('/oauth-callback')
-async def oauth_callback(request: Request):
+async def oauth_callback(request: Request, db: Session = Depends(get_db)):
     """OAuth handshake callback."""
     if 'request_token' not in request.session:
         raise HTTPException(
@@ -135,7 +153,10 @@ async def oauth_callback(request: Request):
         request.session['access_token'] = dict(zip(
             access_token._fields, access_token))
         request.session['username'] = identity['username']
-
+        user = models.User(username=identity['username'])
+        db.add(user)
+        db.commit()
+        db.refresh(user)
     return f"{identity}"
 
 
