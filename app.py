@@ -163,6 +163,7 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
             db.add(user)
             db.commit()
             db.refresh(user)
+            
     return RedirectResponse(url=f"https://pt.wikipedia.org/wiki/Especial:Deadlinkchecker/{session_id}")
 
 

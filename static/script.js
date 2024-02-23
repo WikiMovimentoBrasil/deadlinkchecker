@@ -298,3 +298,20 @@ function stopCheckLink() {
     );
   }
 })();
+
+
+//get sessionID
+let sessionId=mw.storage.get('deadlinkchecker');
+if(!sessionId){}
+//check if page is special
+if (mw.config.get('wgNamespaceNumber') == -1) {
+
+	//split page title
+	const pagetitle = mw.config.get('wgTitle').split("/");
+
+	if (pagetitle[0] == "deadlinkchecker" && pagetitle[1]) {
+		mw.storage.set('deadlinkchecker', pagetitle[1]);
+		window.opener.location.reload();
+		window.close();
+	}
+}
