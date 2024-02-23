@@ -16,7 +16,7 @@ pythom -m venv venv
 ```
 4. Activate the virtual environmeny
 ```
-.venv\Scripts\activate
+.\venv\Scripts\activate
 ```
 5. Install project dependencies
 ```
@@ -24,10 +24,5 @@ pip install -r requirements.txt
 ```
 6. Start the app in development
 ```
-flask --app src run --debug
+uvicorn app:app --reload
 ```
-7. Initialize the database
-```
-flask --app src init-db
-```
-This should create a `urls.sqlite` file in the instance folder in the root of your project

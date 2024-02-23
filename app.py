@@ -3,6 +3,8 @@ import time
 import subprocess
 import os
 import hashlib
+import secrets
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.staticfiles import StaticFiles
@@ -18,24 +20,16 @@ from redis import asyncio as aioredis
 from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session
-from db import SessionLocal, engine
+from db import engine, get_db
+
 import models
+from queries import is_existing_user
+
 # create tables
 models.Base.metadata.create_all(bind=engine)
 
 # load environment variables
 load_dotenv()
-
-# Dependency
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 SOCIAL_AUTH_MEDIAWIKI_KEY = os.environ.get(
     "SOCIAL_AUTH_MEDIAWIKI_KEY", "dummy-default-value")
@@ -80,7 +74,7 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def some_middleware(request: Request, call_next):
+async def session_middleware(request: Request, call_next):
     response = await call_next(request)
     session = request.cookies.get('session')
     if session:
@@ -153,11 +147,23 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
         request.session['access_token'] = dict(zip(
             access_token._fields, access_token))
         request.session['username'] = identity['username']
-        user = models.User(username=identity['username'])
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    return f"{identity}"
+
+        # check for existing user
+        existing_user = await is_existing_user(db=db, username=identity["username"])
+
+        if existing_user:
+            pass
+        else:
+            # generate a sesion_id
+            session_id = f"{datetime.now()-{secrets.token_hex(16)}}"
+
+            # add the user to the database
+            user = models.User(
+                username=identity['username'], session_id=session_id)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+    return RedirectResponse(url=f"https://pt.wikipedia.org/wiki/Especial:Deadlinkchecker/{session_id}")
 
 
 def get_custom_message(status):
