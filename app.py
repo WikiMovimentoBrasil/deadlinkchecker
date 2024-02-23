@@ -149,7 +149,7 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
         request.session['username'] = identity['username']
 
         # check for existing user
-        existing_user = await is_existing_user(db=db, username=identity["username"])
+        existing_user = is_existing_user(db=db, username=identity["username"])
 
         if existing_user:
             pass
@@ -163,7 +163,7 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
             db.add(user)
             db.commit()
             db.refresh(user)
-            
+
     return RedirectResponse(url=f"https://pt.wikipedia.org/wiki/Especial:Deadlinkchecker/{session_id}")
 
 
