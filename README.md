@@ -22,7 +22,16 @@ pythom -m venv venv
 ```
 pip install -r requirements.txt
 ```
-6. Start the app in development
+6. create a `.env` file in the root of your project and add t0 it the following variables
+```
+SOCIAL_AUTH_MEDIAWIKI_KEY= Your oauth key from the oauth consumer registration
+SOCIAL_AUTH_MEDIAWIKI_SECRET= Your oauth secret from the oauth consumer registration
+SOCIAL_AUTH_MEDIAWIKI_URL=https://meta.wikimedia.org/w/index.php
+SESSION_SECRET= a randomly generated secret value
+TOOL_TOOLSDB_USER= Tools database user
+TOOL_TOOLSDB_PASSWORD= Tools database secret
+```
+7. Start the app in development
 ```
 uvicorn app:app --reload
 ```
