@@ -22,7 +22,7 @@ pythom -m venv venv
 ```
 pip install -r requirements.txt
 ```
-6. create a `.env` file in the root of your project and add t0 it the following variables
+6. create a `.env` file in the root of your project and add to it the following variables
 ```
 SOCIAL_AUTH_MEDIAWIKI_KEY= Your oauth key from the oauth consumer registration
 SOCIAL_AUTH_MEDIAWIKI_SECRET= Your oauth secret from the oauth consumer registration
