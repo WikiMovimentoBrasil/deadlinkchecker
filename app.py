@@ -1,44 +1,29 @@
-import asyncio
-import time
 import subprocess
 import os
-import hashlib
-import secrets
-from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 
 from starlette.middleware.sessions import SessionMiddleware
 
-import httpx
-import mwoauth
 from redis import asyncio as aioredis
 from dotenv import load_dotenv
 
-from sqlalchemy.orm import Session
-from db import engine, get_db
-
+from db import engine
 import models
-from queries import is_existing_user
-
-# create tables
-models.Base.metadata.create_all(bind=engine)
+from routes import auth,linkchecker
 
 # load environment variables
 load_dotenv()
 
-SOCIAL_AUTH_MEDIAWIKI_KEY = os.environ.get(
-    "SOCIAL_AUTH_MEDIAWIKI_KEY", "dummy-default-value")
-SOCIAL_AUTH_MEDIAWIKI_SECRET = os.environ.get(
-    "SOCIAL_AUTH_MEDIAWIKI_SECRET", "dummy-default-value")
-SOCIAL_AUTH_MEDIAWIKI_URL = 'https://meta.wikimedia.org/w/index.php'
-SOCIAL_AUTH_MEDIAWIKI_CALLBACK = 'http://127.0.0.1:8080/oauth/complete/mediawiki/'
-SESSION_SECRET = os.environ.get("SESSION_SECRET")
+# create database tables
+models.Base.metadata.create_all(bind=engine)
 
+# Environment variables
+SESSION_SECRET = os.environ.get("SESSION_SECRET")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost")
 
 
@@ -89,133 +74,11 @@ def webhook():
     subprocess.check_output(["git", "pull", "origin", "main"])
     return "Updated Toolforge project successfully", 200
 
+#routers
+app.include_router(auth.router)
+app.include_router(linkchecker.router)
 
-# Render the index page
 @app.get("/", response_class=HTMLResponse)
+# Render the index page
 async def index():
     return open("templates/index.html").read()
-
-
-@app.get("/login")
-async def login(request: Request):
-    """Initiate Oauth login
-
-    get the consumer token from the Media Wiki server and redirect the user to the Media Wiki server to sign the request
-    """
-    consumer_token = mwoauth.ConsumerToken(
-        SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)
-
-    try:
-        redirect, request_token = mwoauth.initiate(
-            SOCIAL_AUTH_MEDIAWIKI_URL, consumer_token)
-
-    except Exception:
-        raise HTTPException(
-            status_code=400, detail="Media Wiki Oauth handshake failed")
-
-    else:
-        request.session["request_token"] = dict(
-            zip(request_token._fields, request_token))
-
-        return RedirectResponse(url=redirect)
-
-
-@app.get('/oauth-callback')
-async def oauth_callback(request: Request, db: Session = Depends(get_db)):
-    """OAuth handshake callback."""
-    if 'request_token' not in request.session:
-        raise HTTPException(
-            status_code=400, detail="Media Wiki oauth handshake failed")
-
-    consumer_token = mwoauth.ConsumerToken(
-        SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)
-
-    try:
-        access_token = mwoauth.complete(
-            SOCIAL_AUTH_MEDIAWIKI_URL,
-            consumer_token,
-            mwoauth.RequestToken(**request.session['request_token']),
-            str(request.query_params))
-
-        identity = mwoauth.identify(
-            SOCIAL_AUTH_MEDIAWIKI_URL, consumer_token, access_token)
-    except Exception:
-        raise HTTPException(
-            status_code=400, detail="Media Wiki oauth authentication failed")
-
-    else:
-        request.session['access_token'] = dict(zip(
-            access_token._fields, access_token))
-        request.session['username'] = identity['username']
-
-        # check for existing user
-        existing_user = is_existing_user(db=db, username=identity["username"])
-
-        if existing_user:
-            pass
-        else:
-            # generate a sesion_id
-            session_id = f"{datetime.now()-{secrets.token_hex(16)}}"
-
-            # add the user to the database
-            user = models.User(
-                username=identity['username'], session_id=session_id)
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-
-    return RedirectResponse(url=f"https://pt.wikipedia.org/wiki/Especial:Deadlinkchecker/{session_id}")
-
-
-def get_custom_message(status):
-    # creates custom error messages for the status codes
-    if 400 <= status < 500:
-        if status == 400:
-            return "bad_request"
-        elif status == 403:
-            return "forbidden"
-        else:
-            return "not_found"
-    elif 500 <= status < 600:
-        return "unable_to_connect"
-    else:
-        return "unknown_error"
-
-
-async def make_request(client, url):
-    try:
-        response = await client.head(url[1])
-        status_code = response.status_code
-        message = get_custom_message(status_code)
-    except httpx.HTTPError as e:
-        status_code = getattr(e, 'status_code', 500)
-        message = get_custom_message(status_code)
-
-    return {
-        "link": url,
-        "status_code": status_code,
-        "status_message": message,
-    }
-
-
-async def obtain_hash(urls):
-    hash = hashlib.sha256(urls.encode()).hexdigest()
-    return hash
-
-
-@app.post("/checklinks", response_class=JSONResponse)
-async def check_links(urls: dict):
-    # check links route
-    start = time.time()
-    headers = {
-        "User-agent": "Mozilla/5.0 (X11; Linux i686; rv:10.0) Gecko/20100101 Firefox/10.0"}
-    async with httpx.AsyncClient(verify=False, headers=headers, follow_redirects=True) as client:
-        tasks = [asyncio.ensure_future(make_request(client, url))
-                 for url in urls.items()]
-        results = await asyncio.gather(*tasks)
-
-    filtered_results = [
-        result for result in results if result['status_code'] != 200]
-    end = time.time()
-    print(f'it took {end-start} seconds to fetch {len(urls)} urls ')
-    return filtered_results

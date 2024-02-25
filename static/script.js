@@ -315,3 +315,6 @@ if (mw.config.get('wgNamespaceNumber') == -1) {
 		window.close();
 	}
 }
+
+// determine which wiki the user is coming from
+mw.config.get("wgServerName");
