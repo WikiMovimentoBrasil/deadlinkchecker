@@ -86,12 +86,16 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
             # generate a sesion_id
             session_id = f"{datetime.now()}-{secrets.token_hex(16)}"
 
-            # add the user to the database
-            user = models.User(
-                username=identity['username'], session_id=session_id)
-            db.add(user)
-            db.commit()
-            db.refresh(user)
+            try:
+                # add the user to the database
+                user = models.User(
+                    username=identity['username'], session_id=session_id)
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+            except Exception as e:
+                db.rollback()
+            
 
 # TODO make the redirect link dynamic depending an which wiki the user is on
     return RedirectResponse(url=f"https://pt.wikipedia.org/wiki/Special:Deadlinkchecker/{session_id}")
