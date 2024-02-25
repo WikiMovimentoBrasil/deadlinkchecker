@@ -86,7 +86,7 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
             pass
         else:
             # generate a sesion_id
-            session_id = f"{datetime.now()-{secrets.token_hex(16)}}"
+            session_id = f"{datetime.now()}-{secrets.token_hex(16)}"
 
             # add the user to the database
             user = models.User(
