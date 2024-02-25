@@ -82,9 +82,7 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
         # check for existing user
         existing_user = is_existing_user(db=db, username=identity["username"])
 
-        if existing_user:
-            pass
-        else:
+        if not existing_user:
             # generate a sesion_id
             session_id = f"{datetime.now()}-{secrets.token_hex(16)}"
 
