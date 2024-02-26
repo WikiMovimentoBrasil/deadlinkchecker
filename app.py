@@ -20,7 +20,7 @@ from routes import auth,linkchecker
 load_dotenv()
 
 # create database tables
-# models.Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 # Environment variables
 SESSION_SECRET = os.environ.get("SESSION_SECRET")
