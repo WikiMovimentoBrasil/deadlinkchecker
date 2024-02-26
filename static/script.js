@@ -60,6 +60,8 @@ class DeadLinkChecker {
       checkingDeadlinks: "pesquisando página por links mortos",
     },
   };
+  sessionId; // sessionId of the user
+  wiki; // the wiki the user is accessing the tool from
 
   constructor() {
     this.userLanguage = this.supportedLanguages.includes(
@@ -67,6 +69,8 @@ class DeadLinkChecker {
     )
       ? mw.config.get("wgUserLanguage")
       : "en";
+    this.sessionId=mw.storage.get("deadlinkchecker")||null;
+    this.wiki=mw.config.get("wgServerName");
   }
   // Methods
 
@@ -104,7 +108,7 @@ class DeadLinkChecker {
   }
 
   #mountResultsDiv() {
-    //Mounts a results dive to the bottom right of the page
+    //Mounts a results div to the bottom right of the page
     const resultsDiv = document.createElement("div");
     resultsDiv.id = "results-div";
     resultsDiv.style.position = "fixed";
@@ -160,75 +164,121 @@ class DeadLinkChecker {
     return batches;
   }
 
-  async findDeadLinks() {
-    const externalLinks = this.#getExternalLinks();
-    console.log(Object.keys(externalLinks).length);
-    const batches = this.#batchLinks(externalLinks);
+  async authenticateUser() {
+    // authorize the tool to identify the user
+    //console.log("login button clicked")
 
-    this.#mountResultsDiv(); // create a div for displaying results from the the link checker
-    if (Object.keys(batches[0]).length > 0) {
-      this.#updateResults(
-        this.languageTexts[this.userLanguage]["checkingPage"],
-        `<img src='https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif' alt='${
-          this.languageTexts[this.userLanguage]["checkingDeadlinks"]
-        }'>`
-      );
-
-      let deadLinkCount = 0;
-      for (let i = 0; i < batches.length; i++) {
-        const data = await this.#sendLinks(
-          "https://deadlinkchecker.toolforge.org/checklinks",
-          batches[i]
-        );
-
-        if (data && data.length > 0) {
-          data.forEach((item) => {
-            let position = item.link[0];
-            const LinkStatus =
-              document.getElementsByClassName("external")[position];
-
-            function getLinkStatusText(errorMessage) {
-              const linkText = `<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                            <image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="16" height="16" />
-                         </svg><span style="color: red;">[${errorMessage}]</span>`;
-              return linkText;
-            }
-            LinkStatus.insertAdjacentHTML(
-              "afterend",
-              getLinkStatusText(
-                this.languageTexts[this.userLanguage][item.status_message]
-              )
-            );
-          });
-          // update the message with the number of dead links
-          deadLinkCount += data.length;
-          let messageElement = document.getElementById("deadlinkfindermsg");
-          messageElement.textContent = deadLinkCount;
+    try {
+      const loginUrl = "https://deadlinkchecker.toolforge.org/login";
+      window.location.href = loginUrl;
+      if (mw.config.get("wgNamespaceNumber") == -1) {
+        //split page title
+        const pagetitle = mw.config.get("wgTitle").split("/");
+      
+        if (pagetitle[0] == "deadlinkchecker" && pagetitle[1]) {
+          mw.storage.set("deadlinkchecker", pagetitle[1]);
+          window.opener.location.reload();
+          window.close();
         }
       }
-
-      if (deadLinkCount > 0) {
-        // display the count of deadlinks
-        this.#updateResults(
-          `${deadLinkCount} ${
-            this.languageTexts[this.userLanguage]["deadLinksFound"]
-          }`,
-          '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="45" height="45" /></svg>'
-        );
-      } else {
-        this.#updateResults(
-          this.languageTexts[this.userLanguage]["ok"],
-          '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
-        );
-      }
-    } else {
-      // show okay
-      this.#updateResults(
-        this.languageTexts[this.userLanguage]["ok"],
-        '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
-      );
+    } catch (error) {
+      console.log("unable to login")
     }
   }
+
+  async findDeadLinks() {
+    console.log(`the wiki name is ${this.wiki}`)
+    console.log(`the sessionId is ${this.sessionId}`)
+    if(this.sessionId==null){
+      // prompt the user to login
+      const loginPrompt=document.createElement("div");
+      loginPrompt.style.position = "fixed";
+      loginPrompt.style.bottom = "0px";
+      loginPrompt.style.right = "5px";
+      loginPrompt.style.padding = "5px";
+      loginPrompt.style.width = "150px";
+      loginPrompt.style.textAlign = "center";
+      loginPrompt.style.backgroundColor = "#e7e7e7";
+      loginPrompt.style.borderRadius = "5px";
+      loginPrompt.style.border = "1px solid #80807f";
+      loginPrompt.innerHTML=`<p>Deadlink checker would like to identify you before using it</p><button id="deadlinkchecker-login">Authorize</button>`
+  
+      document.getElementById("bodyContent").appendChild(loginPrompt);
+      document
+      .getElementById("deadlinkchecker-login")
+      .addEventListener("click", this.authenticateUser);
+    }
+    
+   
+
+  //   const externalLinks = this.#getExternalLinks();
+  //   console.log(Object.keys(externalLinks).length);
+  //   const batches = this.#batchLinks(externalLinks);
+
+  //   this.#mountResultsDiv(); // create a div for displaying results from the the link checker
+  //   if (Object.keys(batches[0]).length > 0) {
+  //     this.#updateResults(
+  //       this.languageTexts[this.userLanguage]["checkingPage"],
+  //       `<img src='https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif' alt='${
+  //         this.languageTexts[this.userLanguage]["checkingDeadlinks"]
+  //       }'>`
+  //     );
+
+  //     let deadLinkCount = 0;
+  //     for (let i = 0; i < batches.length; i++) {
+  //       const data = await this.#sendLinks(
+  //         "https://deadlinkchecker.toolforge.org/checklinks",
+  //         batches[i]
+  //       );
+
+  //       if (data && data.length > 0) {
+  //         data.forEach((item) => {
+  //           let position = item.link[0];
+  //           const LinkStatus =
+  //             document.getElementsByClassName("external")[position];
+
+  //           function getLinkStatusText(errorMessage) {
+  //             const linkText = `<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+  //                           <image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="16" height="16" />
+  //                        </svg><span style="color: red;">[${errorMessage}]</span>`;
+  //             return linkText;
+  //           }
+  //           LinkStatus.insertAdjacentHTML(
+  //             "afterend",
+  //             getLinkStatusText(
+  //               this.languageTexts[this.userLanguage][item.status_message]
+  //             )
+  //           );
+  //         });
+  //         // update the message with the number of dead links
+  //         deadLinkCount += data.length;
+  //         let messageElement = document.getElementById("deadlinkfindermsg");
+  //         messageElement.textContent = deadLinkCount;
+  //       }
+  //     }
+
+  //     if (deadLinkCount > 0) {
+  //       // display the count of deadlinks
+  //       this.#updateResults(
+  //         `${deadLinkCount} ${
+  //           this.languageTexts[this.userLanguage]["deadLinksFound"]
+  //         }`,
+  //         '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/f/f6/OOjs_UI_icon_alert-destructive.svg" width="45" height="45" /></svg>'
+  //       );
+  //     } else {
+  //       this.#updateResults(
+  //         this.languageTexts[this.userLanguage]["ok"],
+  //         '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
+  //       );
+  //     }
+  //   } else {
+  //     // show okay
+  //     this.#updateResults(
+  //       this.languageTexts[this.userLanguage]["ok"],
+  //       '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
+  //     );
+  //   }
+   }
 }
 
 class DeadlinkCheckerSingleton {
@@ -299,22 +349,20 @@ function stopCheckLink() {
   }
 })();
 
-
 //get sessionID
-let sessionId=mw.storage.get('deadlinkchecker');
-if(!sessionId){}
+
+
 //check if page is special
-if (mw.config.get('wgNamespaceNumber') == -1) {
+if (mw.config.get("wgNamespaceNumber") == -1) {
+  //split page title
+  const pagetitle = mw.config.get("wgTitle").split("/");
 
-	//split page title
-	const pagetitle = mw.config.get('wgTitle').split("/");
-
-	if (pagetitle[0] == "deadlinkchecker" && pagetitle[1]) {
-		mw.storage.set('deadlinkchecker', pagetitle[1]);
-		window.opener.location.reload();
-		window.close();
-	}
+  if (pagetitle[0] == "deadlinkchecker" && pagetitle[1]) {
+    mw.storage.set("deadlinkchecker", pagetitle[1]);
+    window.opener.location.reload();
+    window.close();
+  }
 }
 
 // determine which wiki the user is coming from
-mw.config.get("wgServerName");
+
