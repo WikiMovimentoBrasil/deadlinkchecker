@@ -179,7 +179,7 @@ class DeadLinkChecker {
   async findDeadLinks() {
     console.log(`the wiki name is ${this.wiki}`)
     console.log(`the sessionId is ${this.sessionId}`)
-    if(this.sessionId==null){
+    if(this.sessionId===null){
       // prompt the user to login
       const loginPrompt=document.createElement("div");
       loginPrompt.style.position = "fixed";
