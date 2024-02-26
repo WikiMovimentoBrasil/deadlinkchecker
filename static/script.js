@@ -170,17 +170,7 @@ class DeadLinkChecker {
 
     try {
       const loginUrl = "https://deadlinkchecker.toolforge.org/login";
-      window.location.href = loginUrl;
-      if (mw.config.get("wgNamespaceNumber") == -1) {
-        //split page title
-        const pagetitle = mw.config.get("wgTitle").split("/");
-      
-        if (pagetitle[0] == "deadlinkchecker" && pagetitle[1]) {
-          mw.storage.set("deadlinkchecker", pagetitle[1]);
-          window.opener.location.reload();
-          window.close();
-        }
-      }
+      window.open(loginUrl,"popup");
     } catch (error) {
       console.log("unable to login")
     }
@@ -355,7 +345,7 @@ function stopCheckLink() {
 //check if page is special
 if (mw.config.get("wgNamespaceNumber") == -1) {
   //split page title
-  const pagetitle = mw.config.get("wgTitle").split("/");
+  var pagetitle = mw.config.get("wgTitle").split("/");
 
   if (pagetitle[0] == "deadlinkchecker" && pagetitle[1]) {
     mw.storage.set("deadlinkchecker", pagetitle[1]);
