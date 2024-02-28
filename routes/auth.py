@@ -99,7 +99,7 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
             
     referer = request.headers.get("referer")
     origin_host = None
-    if referer:
+
         #parsed_referer = urlparse(referer)
         #origin_host = parsed_referer.hostname
     return {"origin_host": referer}
