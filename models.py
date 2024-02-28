@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, TIMESTAMP, text
 from sqlalchemy.schema import FetchedValue
 from sqlalchemy.sql import func
+from sqlalchemy.schema import UniqueConstraint
 
 from db import Base
 
@@ -18,3 +19,6 @@ class User(Base):
                                       "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
                                   server_onupdate=FetchedValue())
     link_count = Column(Integer, nullable=True)
+
+    __table_args__ = (UniqueConstraint('username', 'language', name='_username_language'),
+                     )

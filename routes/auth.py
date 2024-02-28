@@ -9,7 +9,7 @@ import mwoauth
 
 import models
 from db import get_db
-from queries import is_existing_user
+from queries import get_user_session_id
 
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
@@ -82,22 +82,30 @@ async def oauth_callback(wiki, request: Request, db: Session = Depends(get_db)):
             access_token._fields, access_token))
         request.session['username'] = identity['username']
 
-        # check for existing user
-        existing_user = is_existing_user(db=db, username=identity["username"])
 
-        if not existing_user:
-            # generate a sesion_id
-            session_id = f"{time.time()}-{secrets.token_hex(16)}"
+        # generate a sesion_id
+        session_id = f"{time.time()}-{secrets.token_hex(16)}"
 
-            try:
-                # add the user to the database
-                user = models.User(
-                    username=identity['username'], session_id=session_id,language=wiki)
-                db.add(user)
-                db.commit()
-                db.refresh(user)
-            except Exception as e:
-                db.rollback()
+        try:
+            # add the user to the database
+            user = models.User(
+                username=identity['username'], session_id=session_id,language=wiki)
+            db.add(user)
+            db.commit()
+            
+        except Exception as e:
+            db.rollback()
+                
 
-# TODO make the redirect link dynamic depending an which wiki the user is on
-    return RedirectResponse(url=f"https://{wiki}/wiki/Special:Deadlinkchecker/{session_id}")
+        # checking the database for username and language
+        db_session_id=get_user_session_id(db=db,username=identity["username"],lang=wiki)
+
+        if db_session_id:
+            return RedirectResponse(url=f"https://{wiki}/wiki/Special:Deadlinkchecker/{db_session_id}")
+        
+        return HTTPException(status_code=500,detail="failed to save the user to the database")
+
+            
+
+
+    
