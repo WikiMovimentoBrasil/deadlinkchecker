@@ -1,7 +1,6 @@
 import os
 import secrets
-from datetime import datetime
-from urllib.parse import urlparse
+import time
 
 from fastapi import HTTPException, Request, APIRouter, Depends
 from fastapi.responses import RedirectResponse
@@ -34,9 +33,9 @@ async def login(request: Request, wiki):
 
     get the consumer token from the Media Wiki server and redirect the user to the Media Wiki server to sign the request
     """
-    # callback_wiki=f"{SOCIAL_AUTH_MEDIAWIKI_CALLBACK}{wiki}"
     SOCIAL_AUTH_MEDIAWIKI_CALLBACK = f'https://deadlinkchecker.toolforge.org/oauth-callback/{
         wiki}'
+    
     consumer_token = mwoauth.ConsumerToken(
         SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)
 
@@ -88,12 +87,12 @@ async def oauth_callback(wiki, request: Request, db: Session = Depends(get_db)):
 
         if not existing_user:
             # generate a sesion_id
-            session_id = f"{datetime.now()}-{secrets.token_hex(16)}"
+            session_id = f"{time.time()}-{secrets.token_hex(16)}"
 
             try:
                 # add the user to the database
                 user = models.User(
-                    username=identity['username'], session_id=session_id)
+                    username=identity['username'], session_id=session_id,language=wiki)
                 db.add(user)
                 db.commit()
                 db.refresh(user)
