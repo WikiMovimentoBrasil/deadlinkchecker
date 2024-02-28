@@ -1,6 +1,7 @@
 import os
 import secrets
 from datetime import datetime
+from urllib.parse import urlparse
 
 from fastapi import HTTPException,Request,APIRouter,Depends
 from fastapi.responses import RedirectResponse
@@ -96,6 +97,11 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
             except Exception as e:
                 db.rollback()
             
-
+    referer = request.headers.get("referer")
+    origin_host = None
+    if referer:
+        parsed_referer = urlparse(referer)
+        origin_host = parsed_referer.hostname
+    return {"origin_host": origin_host}
 # TODO make the redirect link dynamic depending an which wiki the user is on
-    return RedirectResponse(url=f"https://en.wikipedia.org/wiki/Special:Deadlinkchecker/{session_id}")
+    #return RedirectResponse(url=f"https://en.wikipedia.org/wiki/Special:Deadlinkchecker/{session_id}")
