@@ -96,7 +96,8 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
                 db.refresh(user)
             except Exception as e:
                 db.rollback()
-            
-    return request.url.hostname
+    
+    http_referer = request.headers.get('referer')
+    return http_referer
 # TODO make the redirect link dynamic depending an which wiki the user is on
     #return RedirectResponse(url=f"https://en.wikipedia.org/wiki/Special:Deadlinkchecker/{session_id}")
