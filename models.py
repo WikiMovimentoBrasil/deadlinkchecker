@@ -10,7 +10,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(50), unique=True)
+    username = Column(String(50))
     session_id = Column(String(100), unique=True)
     language = Column(String(50))
     created_at = Column(TIMESTAMP,server_default=func.now())
