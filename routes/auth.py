@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime
 from urllib.parse import urlparse
 
-from fastapi import HTTPException,Request,APIRouter,Depends
+from fastapi import HTTPException, Request, APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
 import mwoauth
@@ -19,23 +19,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # router
-router=APIRouter()
+router = APIRouter()
 
 SOCIAL_AUTH_MEDIAWIKI_KEY = os.environ.get(
     "SOCIAL_AUTH_MEDIAWIKI_KEY", "dummy-default-value")
 SOCIAL_AUTH_MEDIAWIKI_SECRET = os.environ.get(
     "SOCIAL_AUTH_MEDIAWIKI_SECRET", "dummy-default-value")
 SOCIAL_AUTH_MEDIAWIKI_URL = 'https://meta.wikimedia.org/w/index.php'
-SOCIAL_AUTH_MEDIAWIKI_CALLBACK = 'http://127.0.0.1:8080/oauth/complete/mediawiki/'
+SOCIAL_AUTH_MEDIAWIKI_CALLBACK = 'https://deadlinkchecker.toolforge.org/oauth-callback/'
 
-@router.get("/login")
-async def login(request: Request):
+
+@router.get("/login/{wiki}")
+async def login(request: Request, wiki):
     """Initiate Oauth login
 
     get the consumer token from the Media Wiki server and redirect the user to the Media Wiki server to sign the request
     """
+    callback_wiki=f"{SOCIAL_AUTH_MEDIAWIKI_CALLBACK}{wiki}"
     consumer_token = mwoauth.ConsumerToken(
-        SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)
+        SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET, callback_wiki)
 
     try:
         redirect, request_token = mwoauth.initiate(
@@ -52,8 +54,8 @@ async def login(request: Request):
         return RedirectResponse(url=redirect)
 
 
-@router.get('/oauth-callback')
-async def oauth_callback(request: Request, db: Session = Depends(get_db)):
+@router.get('/oauth-callback/{wiki}')
+async def oauth_callback(wiki, request: Request, db: Session = Depends(get_db)):
     """OAuth handshake callback."""
     if 'request_token' not in request.session:
         raise HTTPException(
@@ -96,6 +98,6 @@ async def oauth_callback(request: Request, db: Session = Depends(get_db)):
                 db.refresh(user)
             except Exception as e:
                 db.rollback()
-    
+
 # TODO make the redirect link dynamic depending an which wiki the user is on
-    return RedirectResponse(url=f"https://en.wikipedia.org/wiki/Special:Deadlinkchecker/{session_id}")
+    return RedirectResponse(url=f"https://{wiki}/wiki/Special:Deadlinkchecker/{session_id}")

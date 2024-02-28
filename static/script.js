@@ -169,7 +169,7 @@ class DeadLinkChecker {
     //console.log("login button clicked")
 
     try {
-      const loginUrl = `https://deadlinkchecker.toolforge.org/login`;
+      const loginUrl = `https://deadlinkchecker.toolforge.org/login/${this.wiki}`;
       window.open(loginUrl,"popup");
     } catch (error) {
       console.log("unable to login")
