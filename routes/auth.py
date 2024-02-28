@@ -28,21 +28,21 @@ SOCIAL_AUTH_MEDIAWIKI_SECRET = os.environ.get(
 SOCIAL_AUTH_MEDIAWIKI_URL = 'https://meta.wikimedia.org/w/index.php'
 
 
-
 @router.get("/login/{wiki}")
 async def login(request: Request, wiki):
     """Initiate Oauth login
 
     get the consumer token from the Media Wiki server and redirect the user to the Media Wiki server to sign the request
     """
-    #callback_wiki=f"{SOCIAL_AUTH_MEDIAWIKI_CALLBACK}{wiki}"
-    SOCIAL_AUTH_MEDIAWIKI_CALLBACK = f'https://deadlinkchecker.toolforge.org/oauth-callback/{wiki}'
+    # callback_wiki=f"{SOCIAL_AUTH_MEDIAWIKI_CALLBACK}{wiki}"
+    SOCIAL_AUTH_MEDIAWIKI_CALLBACK = f'https://deadlinkchecker.toolforge.org/oauth-callback/{
+        wiki}'
     consumer_token = mwoauth.ConsumerToken(
-        SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET, SOCIAL_AUTH_MEDIAWIKI_CALLBACK)
+        SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)
 
     try:
         redirect, request_token = mwoauth.initiate(
-            SOCIAL_AUTH_MEDIAWIKI_URL, consumer_token)
+            SOCIAL_AUTH_MEDIAWIKI_URL, consumer_token, SOCIAL_AUTH_MEDIAWIKI_CALLBACK)
 
     except Exception:
         raise HTTPException(
