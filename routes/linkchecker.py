@@ -1,5 +1,6 @@
 import asyncio
 import time
+from datetime import datetime,timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
@@ -59,13 +60,23 @@ async def check_links(data: dict, db: Session = Depends(get_db)):
                        lang=wiki, session_id=session_id)
 
     if db_user:
-        if db_user.link_count+len(urls) > 10000:
-            raise HTTPException(
-                status_code=200, detail="Too many links requested")
+        
+            #update the link count time stamp
+        if db_user.link_count_timestamp+timedelta(days=1)>datetime.now():
+                db_user.link_count_timestamp=datetime.now()
+                db_user.link_count = len(urls)
+                db.commit()
+        
         else:
-            db_user.link_count += len(urls)
-            db.commit()
+            if db_user.link_count+len(urls) > 10000:
+                raise HTTPException(
+                    status_code=200, detail="Too many links requested")
+            else:
+                db_user.link_count += len(urls)
+                db.commit()
+        
 
+        # request headers
         headers = {
             "User-agent": "Mozilla/5.0 (X11; Linux i686; rv:10.0) Gecko/20100101 Firefox/10.0"
         }

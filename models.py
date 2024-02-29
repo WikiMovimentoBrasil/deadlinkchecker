@@ -15,9 +15,7 @@ class User(Base):
     language = Column(String(50))
     created_at = Column(TIMESTAMP,server_default=func.now())
     link_count_timestamp = Column(TIMESTAMP,
-                                  server_default=text(
-                                      "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
-                                  server_onupdate=FetchedValue())
+                                  server_default=func.now())
     link_count = Column(Integer, nullable=True)
 
     __table_args__ = (UniqueConstraint('username', 'language', name='_username_language'),
