@@ -43,7 +43,7 @@ class DeadLinkChecker {
       stopLinkChecker: "Stop link checker",
       checkingPage: "checking page...",
       ok: "OK!",
-      deadLinksFound: "dead links found",
+      deadLinksFound: "dead link(s) found",
       checkingDeadlinks: "searching page for dead links",
     },
     pt: {
@@ -56,7 +56,7 @@ class DeadLinkChecker {
       stopLinkChecker: "Parar verificador de link",
       checkingPage: "página de verificação...",
       ok: "OK!",
-      deadLinksFound: "links mortos encontrados",
+      deadLinksFound: "link(s) mortos encontrados",
       checkingDeadlinks: "pesquisando página por links mortos",
     },
   };
@@ -177,27 +177,27 @@ class DeadLinkChecker {
   }
 
   async findDeadLinks() {
-    console.log(`the wiki name is ${this.wiki}`)
-    console.log(`the sessionId is ${this.sessionId}`)
-    if(this.sessionId===null){
-      // prompt the user to login
-      const loginPrompt=document.createElement("div");
-      loginPrompt.style.position = "fixed";
-      loginPrompt.style.bottom = "0px";
-      loginPrompt.style.right = "5px";
-      loginPrompt.style.padding = "5px";
-      loginPrompt.style.width = "150px";
-      loginPrompt.style.textAlign = "center";
-      loginPrompt.style.backgroundColor = "#e7e7e7";
-      loginPrompt.style.borderRadius = "5px";
-      loginPrompt.style.border = "1px solid #80807f";
-      loginPrompt.innerHTML=`<p>Deadlink checker would like to identify you before using it</p><button id="deadlinkchecker-login">Authorize</button>`
+    // console.log(`the wiki name is ${this.wiki}`)
+    // console.log(`the sessionId is ${this.sessionId}`)
+    // if(this.sessionId===null){
+    //   // prompt the user to login
+    //   const loginPrompt=document.createElement("div");
+    //   loginPrompt.style.position = "fixed";
+    //   loginPrompt.style.bottom = "0px";
+    //   loginPrompt.style.right = "5px";
+    //   loginPrompt.style.padding = "5px";
+    //   loginPrompt.style.width = "150px";
+    //   loginPrompt.style.textAlign = "center";
+    //   loginPrompt.style.backgroundColor = "#e7e7e7";
+    //   loginPrompt.style.borderRadius = "5px";
+    //   loginPrompt.style.border = "1px solid #80807f";
+    //   loginPrompt.innerHTML=`<p>Deadlink checker would like to identify you before using it</p><button id="deadlinkchecker-login">Authorize</button>`
   
-      document.getElementById("bodyContent").appendChild(loginPrompt);
-      document
-      .getElementById("deadlinkchecker-login")
-      .addEventListener("click", this.authenticateUser);
-    }
+    //   document.getElementById("bodyContent").appendChild(loginPrompt);
+    //   document
+    //   .getElementById("deadlinkchecker-login")
+    //   .addEventListener("click", this.authenticateUser);
+    // }
     
    
 
