@@ -69,8 +69,9 @@ class DeadLinkChecker {
     )
       ? mw.config.get("wgUserLanguage")
       : "en";
-    this.sessionId=mw.storage.get("deadlinkchecker")||null;
-    this.wiki=mw.config.get("wgServerName");
+    this.sessionId = mw.storage.get("deadlinkchecker") || null;
+    this.wiki = mw.config.get("wgServerName");
+    this.username = mw.config.get("wgUserName");
   }
   // Methods
 
@@ -170,9 +171,9 @@ class DeadLinkChecker {
 
     try {
       const loginUrl = `https://deadlinkchecker.toolforge.org/login/${this.wiki}`;
-      window.open(loginUrl,"popup");
+      window.open(loginUrl, "popup");
     } catch (error) {
-      console.log("unable to login")
+      console.log("unable to login");
     }
   }
 
@@ -192,14 +193,12 @@ class DeadLinkChecker {
     //   loginPrompt.style.borderRadius = "5px";
     //   loginPrompt.style.border = "1px solid #80807f";
     //   loginPrompt.innerHTML=`<p>Deadlink checker would like to identify you before using it</p><button id="deadlinkchecker-login">Authorize</button>`
-  
+
     //   document.getElementById("bodyContent").appendChild(loginPrompt);
     //   document
     //   .getElementById("deadlinkchecker-login")
     //   .addEventListener("click", this.authenticateUser);
     // }
-    
-   
 
     const externalLinks = this.#getExternalLinks();
     console.log(Object.keys(externalLinks).length);
@@ -218,7 +217,12 @@ class DeadLinkChecker {
       for (let i = 0; i < batches.length; i++) {
         const data = await this.#sendLinks(
           "https://deadlinkchecker.toolforge.org/checklinks",
-          batches[i]
+          {
+            urls: batches[i],
+            wiki: this.wiki,
+            sessionId: this.sessionId,
+            username: this.username,
+          }
         );
 
         if (data && data.length > 0) {
@@ -268,7 +272,7 @@ class DeadLinkChecker {
         '<svg width="45" height="45" xmlns="http://www.w3.org/2000/svg"><image href="https://upload.wikimedia.org/wikipedia/commons/1/16/Allowed.svg" width="45" height="45" /></svg>'
       );
     }
-   }
+  }
 }
 
 class DeadlinkCheckerSingleton {
@@ -341,7 +345,6 @@ function stopCheckLink() {
 
 //get sessionID
 
-
 //check if page is special
 if (mw.config.get("wgNamespaceNumber") == -1) {
   //split page title
@@ -355,4 +358,3 @@ if (mw.config.get("wgNamespaceNumber") == -1) {
 }
 
 // determine which wiki the user is coming from
-
