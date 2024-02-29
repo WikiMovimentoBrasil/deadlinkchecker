@@ -165,12 +165,12 @@ class DeadLinkChecker {
     return batches;
   }
 
-  async authenticateUser() {
+  async authenticateUser(wiki) {
     // authorize the tool to identify the user
     //console.log("login button clicked")
 
     try {
-      const loginUrl = `https://deadlinkchecker.toolforge.org/login/${this.wiki}`;
+      const loginUrl = `https://deadlinkchecker.toolforge.org/login/${wiki}`;
       window.open(loginUrl, "popup");
     } catch (error) {
       console.log("unable to login");
@@ -178,27 +178,27 @@ class DeadLinkChecker {
   }
 
   async findDeadLinks() {
-    // console.log(`the wiki name is ${this.wiki}`)
-    // console.log(`the sessionId is ${this.sessionId}`)
-    // if(this.sessionId===null){
-    //   // prompt the user to login
-    //   const loginPrompt=document.createElement("div");
-    //   loginPrompt.style.position = "fixed";
-    //   loginPrompt.style.bottom = "0px";
-    //   loginPrompt.style.right = "5px";
-    //   loginPrompt.style.padding = "5px";
-    //   loginPrompt.style.width = "150px";
-    //   loginPrompt.style.textAlign = "center";
-    //   loginPrompt.style.backgroundColor = "#e7e7e7";
-    //   loginPrompt.style.borderRadius = "5px";
-    //   loginPrompt.style.border = "1px solid #80807f";
-    //   loginPrompt.innerHTML=`<p>Deadlink checker would like to identify you before using it</p><button id="deadlinkchecker-login">Authorize</button>`
-
-    //   document.getElementById("bodyContent").appendChild(loginPrompt);
-    //   document
-    //   .getElementById("deadlinkchecker-login")
-    //   .addEventListener("click", this.authenticateUser);
-    // }
+    console.log(`the wiki name is ${this.wiki}`)
+    console.log(`the sessionId is ${this.sessionId}`)
+    if(this.sessionId===null){
+      //prompt the user to login
+      const loginPrompt=document.createElement("div");
+            loginPrompt.style.position = "fixed";
+            loginPrompt.style.bottom = "0px";
+            loginPrompt.style.right = "5px";
+            loginPrompt.style.padding = "5px";
+            loginPrompt.style.width = "150px";
+            loginPrompt.style.textAlign = "center";
+            loginPrompt.style.backgroundColor = "#e7e7e7";
+            loginPrompt.style.borderRadius = "5px";
+            loginPrompt.style.border = "1px solid #80807f";
+            loginPrompt.innerHTML=`<p>Deadlink checker would like to identify you before using it</p><button id="deadlinkchecker-login">Authorize</button>`
+      document.getElementById("bodyContent").appendChild(loginPrompt);
+      document
+        .getElementById("deadlinkchecker-login")
+        .addEventListener("click", this.authenticateUser(this.wiki));
+      return;
+    }
 
     const externalLinks = this.#getExternalLinks();
     console.log(Object.keys(externalLinks).length);
@@ -343,18 +343,14 @@ function stopCheckLink() {
   }
 })();
 
-//get sessionID
-
-//check if page is special
+// To run in the sessionid callback
 if (mw.config.get("wgNamespaceNumber") == -1) {
   //split page title
   var pagetitle = mw.config.get("wgTitle").split("/");
 
-  if (pagetitle[0] == "deadlinkchecker" && pagetitle[1]) {
+  if (pagetitle[0] == "Deadlinkchecker" && pagetitle[1]) {
     mw.storage.set("deadlinkchecker", pagetitle[1]);
     window.opener.location.reload();
     window.close();
   }
 }
-
-// determine which wiki the user is coming from

@@ -55,28 +55,39 @@ async def check_links(data: dict, db: Session = Depends(get_db)):
     session_id = data["sessionId"]  # The sessionId of the user
     username = data["username"]
 
-    # query the database for the user
+    if session_id is None:
+        raise HTTPException(
+            status_code=400, detail="Session ID not provided.")
+
+    # Query the database for the user
     db_user = get_user(db=db, username=username,
                        lang=wiki, session_id=session_id)
 
+    # Verify if user are on database
     if db_user:
-        
-            #update the link count time stamp
-        if db_user.link_count_timestamp+timedelta(days=1)>datetime.now():
-                db_user.link_count_timestamp=datetime.now()
-                db_user.link_count = len(urls)
-                db.commit()
-        
-        else:
-            if db_user.link_count+len(urls) > 10000:
-                raise HTTPException(
-                    status_code=200, detail="Too many links requested")
-            else:
-                db_user.link_count += len(urls)
-                db.commit()
-        
 
-        # request headers
+        # Verify if linkcount expiration time has passed
+        if db_user.link_count_timestamp + timedelta(days=1) < datetime.now():
+
+            # Resets linkcount
+            db_user.link_count_timestamp = datetime.now()
+            db_user.link_count = len(urls)
+            db.commit()
+
+        # When linkcount time is still valid
+        else:
+
+            # When limit of link has been reached
+            if db_user.link_count + len(urls) > 10000:
+                raise HTTPException(
+                    status_code=429, detail="Too many links requested")
+
+            # Logs amount of new links
+            else:
+                setattr(db_user, 'link_count', db_user.link_count + len(urls))
+                db.commit()
+
+        # Request headers
         headers = {
             "User-agent": "Mozilla/5.0 (X11; Linux i686; rv:10.0) Gecko/20100101 Firefox/10.0"
         }
@@ -92,4 +103,4 @@ async def check_links(data: dict, db: Session = Depends(get_db)):
 
         return filtered_results
 
-    return HTTPException(status_code=400, detail="unable to fulfill this request")
+    return HTTPException(status_code=400, detail="User not found on database.")
