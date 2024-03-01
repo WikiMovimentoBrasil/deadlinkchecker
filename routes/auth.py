@@ -33,8 +33,7 @@ async def login(request: Request, wiki):
 
     get the consumer token from the Media Wiki server and redirect the user to the Media Wiki server to sign the request
     """
-    SOCIAL_AUTH_MEDIAWIKI_CALLBACK = f'https://deadlinkchecker.toolforge.org/oauth-callback/{
-        wiki}'
+    SOCIAL_AUTH_MEDIAWIKI_CALLBACK = f'https://deadlinkchecker.toolforge.org/oauth-callback/{wiki}'
     
     consumer_token = mwoauth.ConsumerToken(
         SOCIAL_AUTH_MEDIAWIKI_KEY, SOCIAL_AUTH_MEDIAWIKI_SECRET)

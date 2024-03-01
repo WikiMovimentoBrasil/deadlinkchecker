@@ -62,6 +62,7 @@ async def check_links(data: dict, db: Session = Depends(get_db)):
     # Query the database for the user
     db_user = get_user(db=db, username=username,
                        lang=wiki, session_id=session_id)
+    db_user.link_count = int(db_user.link_count or 0)
 
     # Verify if user are on database
     if db_user:

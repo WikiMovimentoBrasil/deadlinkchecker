@@ -96,16 +96,28 @@ class DeadLinkChecker {
     controller = new AbortController();
     let signal = controller.signal;
 
-    // function to post links to the python server
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-      signal,
-    });
-    return response.json();
+    try {
+      // function to post links to the python server
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+        signal,
+      });
+
+      // Check for 500 error status
+      if (response.status === 500) {
+        return false;
+      }
+      return response.json();
+
+    } catch (error) {
+      // Handle other errors, such as network errors or parsing errors
+      console.error("Error during fetch:", error);
+      return false; // Alternatively, re-throw the error if needed
+    }
   }
 
   #mountResultsDiv() {
@@ -146,8 +158,8 @@ class DeadLinkChecker {
       .addEventListener("click", this.clearResults);
   }
 
-  #batchLinks(links) {
-    const batch_size = 50;
+  #batchLinks(links, req_batch_size = 20) {
+    const batch_size = req_batch_size;
     const batches = [];
     const keys = Object.keys(links);
 
@@ -248,6 +260,8 @@ class DeadLinkChecker {
           deadLinkCount += data.length;
           let messageElement = document.getElementById("deadlinkfindermsg");
           messageElement.textContent = deadLinkCount;
+        } else {
+          //TODO: Deal with 500 responses
         }
       }
 
