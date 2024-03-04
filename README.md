@@ -30,6 +30,8 @@ SOCIAL_AUTH_MEDIAWIKI_URL=https://meta.wikimedia.org/w/index.php
 SESSION_SECRET= a randomly generated secret value
 TOOL_TOOLSDB_USER= Tools database user
 TOOL_TOOLSDB_PASSWORD= Tools database secret
+REDIS_URL= Redis URL
+REDIS_PREFIX= Redis key prefix
 ```
 7. Start the app in development
 ```
