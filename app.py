@@ -24,24 +24,9 @@ models.Base.metadata.create_all(bind=engine)
 
 # Environment variables
 SESSION_SECRET = os.environ.get("SESSION_SECRET")
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost")
-
-
-async def get_redis():
-    return aioredis.from_url(REDIS_URL)
-
-
-@asynccontextmanager
-async def life_span(app: FastAPI):
-    # instantiate redis on application start up
-    redis = await get_redis()
-    yield
-    # close redis on application shut down
-    await redis.close()
-
 
 # fastapi instance
-app = FastAPI(lifespan=life_span)
+app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 # mounting static files and templates

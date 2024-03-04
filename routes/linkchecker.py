@@ -1,18 +1,33 @@
 import asyncio
 import time
-from datetime import datetime,timedelta
+import os
+from datetime import datetime, timedelta
+import pickle
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
 import httpx
 from sqlalchemy.orm import Session
+from redis import asyncio as aioredis
+from dotenv import load_dotenv
 
 from queries import get_user
 from db import get_db
 
+#load environment varables
+load_dotenv()
+
 # router
 router = APIRouter()
+
+# redis
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost")
+REDIS_PREFIX=os.getenv("REDIS_PREFIX") #prefix for redis keys
+REDIS_EXPIRY=86400 # expiry of 1 day
+
+async def get_redis():
+    return aioredis.from_url(REDIS_URL,encoding="utf-8", decode_responses=True)
 
 
 def get_custom_message(status):
@@ -30,25 +45,42 @@ def get_custom_message(status):
         return "unknown_error"
 
 
-async def make_request(client, url):
+async def make_request_and_cache(client, redis, url):
+
+    # check if the link is cached in redis
+    cached_response = await redis.get(url[1])
+    if cached_response:
+        print(f"{url[1]} was got from cache")
+        deserialized_cached_response=pickle.loads(cached_response)
+        return deserialized_cached_response
+
+    # if the link isn't in cache make request using httpx
     try:
         response = await client.head(url[1])
         status_code = response.status_code
         message = get_custom_message(status_code)
+
     except httpx.HTTPError as e:
         status_code = getattr(e, 'status_code', 500)
         message = get_custom_message(status_code)
 
-    return {
+    result = {
         "link": url,
         "status_code": status_code,
         "status_message": message,
     }
 
+    # cache the result in redis
+    serialized_result=pickle.dumps(result)
+    await redis.setex(url[1], serialized_result,REDIS_EXPIRY)
+
+    return result
+
 
 @router.post("/checklinks", response_class=JSONResponse)
-async def check_links(data: dict, db: Session = Depends(get_db)):
+async def check_links(data: dict, redis: aioredis.Redis = Depends(get_redis), db: Session = Depends(get_db)):
     # check links route
+    start=time.time()
 
     urls = data["urls"]  # The urls to be checked
     wiki = data["wiki"]  # The wiki the user is coming from
@@ -94,13 +126,14 @@ async def check_links(data: dict, db: Session = Depends(get_db)):
         }
 
         async with httpx.AsyncClient(verify=False, headers=headers, follow_redirects=True) as client:
-            tasks = [asyncio.ensure_future(make_request(client, url))
-                     for url in urls.items()]
+            tasks = [asyncio.ensure_future(make_request_and_cache(client, redis, url))
+                        for url in urls.items()]
             results = await asyncio.gather(*tasks)
 
         filtered_results = [
             result for result in results if result['status_code'] != 200]
         end = time.time()
+        print(f"it took {end-start} seconds to fetch {len(urls)}")
 
         return filtered_results
 
