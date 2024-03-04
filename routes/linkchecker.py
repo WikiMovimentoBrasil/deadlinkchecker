@@ -47,34 +47,34 @@ def get_custom_message(status):
 
 async def make_request_and_cache(client, redis, url):
 
-    # check if the link is cached in redis
-    cached_response = await redis.get(url[1])
-    if cached_response:
-        print(f"{url[1]} was got from cache")
-        deserialized_cached_response=pickle.loads(cached_response)
-        return deserialized_cached_response
+    async with redis:
+        # check if the link is cached in redis
+        cached_response = await redis.get(url[1])
+        if cached_response:
+            deserialized_cached_response=pickle.loads(cached_response)
+            return deserialized_cached_response
 
-    # if the link isn't in cache make request using httpx
-    try:
-        response = await client.head(url[1])
-        status_code = response.status_code
-        message = get_custom_message(status_code)
+        # if the link isn't in cache make request using httpx
+        try:
+            response = await client.head(url[1])
+            status_code = response.status_code
+            message = get_custom_message(status_code)
 
-    except httpx.HTTPError as e:
-        status_code = getattr(e, 'status_code', 500)
-        message = get_custom_message(status_code)
+        except httpx.HTTPError as e:
+            status_code = getattr(e, 'status_code', 500)
+            message = get_custom_message(status_code)
 
-    result = {
-        "link": url,
-        "status_code": status_code,
-        "status_message": message,
-    }
+        result = {
+            "link": url,
+            "status_code": status_code,
+            "status_message": message,
+        }
 
-    # cache the result in redis
-    serialized_result=pickle.dumps(result)
-    await redis.setex(url[1], serialized_result,REDIS_EXPIRY)
+        # cache the result in redis
+        serialized_result=pickle.dumps(result)
+        await redis.setex(url[1], serialized_result,REDIS_EXPIRY)
 
-    return result
+        return result
 
 
 @router.post("/checklinks", response_class=JSONResponse)
