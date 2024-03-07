@@ -48,8 +48,10 @@ def get_custom_message(status):
 async def make_request_and_cache(client, redis, url):
 
     async with redis:
+        redis_key = f"{REDIS_PREFIX}{url[1]}" #prefix links
+
         # check if the link is cached in redis
-        cached_response = await redis.get(url[1])
+        cached_response = await redis.get(redis_key)
         if cached_response:
             deserialized_cached_response=pickle.loads(cached_response)
             return deserialized_cached_response
@@ -72,7 +74,7 @@ async def make_request_and_cache(client, redis, url):
 
         # cache the result in redis
         serialized_result=pickle.dumps(result)
-        await redis.setex(url[1], serialized_result,REDIS_EXPIRY)
+        await redis.setex(redis_key, serialized_result,REDIS_EXPIRY)
 
         return result
 
