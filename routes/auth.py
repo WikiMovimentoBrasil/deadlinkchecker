@@ -81,23 +81,27 @@ async def oauth_callback(wiki, request: Request, db: Session = Depends(get_db)):
             access_token._fields, access_token))
         request.session['username'] = identity['username']
 
-
         # generate a sesion_id
         session_id = f"{time.time()}-{secrets.token_hex(16)}"
 
         try:
             # add the user to the database
             user = models.User(
-                username=identity['username'], session_id=session_id,language=wiki)
+                username=identity['username'],
+                session_id=session_id,
+                language=wiki,
+                link_count=int(0))
             db.add(user)
             db.commit()
-            
+
         except Exception as e:
             db.rollback()
-                
 
         # checking the database for username and language
-        db_session_id=get_user_session_id(db=db,username=identity["username"],lang=wiki)
+        db_session_id = get_user_session_id(
+            db=db,
+            username=identity["username"],
+            lang=wiki)
 
         if db_session_id:
             return RedirectResponse(url=f"https://{wiki}/wiki/Special:Deadlinkchecker/{db_session_id}")
