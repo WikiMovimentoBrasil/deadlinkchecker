@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, String, TIMESTAMP, text
-from sqlalchemy.schema import FetchedValue
+from sqlalchemy import Column, Integer, String, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.schema import UniqueConstraint
 
