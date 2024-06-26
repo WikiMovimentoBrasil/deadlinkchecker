@@ -32,8 +32,21 @@ class DeadLinkChecker {
   ];
 
   userLanguage; // The user's language on wikipedia
-  supportedLanguages = ["pt", "en"];
+  supportedLanguages = ["de", "en", "pt"];
   languageTexts = {
+    de: {
+      bad_request: "Falsche Anfrage",
+      forbidden: "Verboten",
+      not_found: "Nicht gefunden",
+      unable_to_connect: "Kann nicht verbinden",
+      unknown_error: "Unbekannter Fehler",
+      checkLinks: "Links überprüfen",
+      stopLinkChecker: "Link Prüfer stoppen",
+      checkingPage: "checking page...",
+      ok: "OK!",
+      deadLinksFound: "Tote/n Link/s gefunden",
+      checkingDeadlinks: "Seite nach toten Links durchsuchen",
+    },
     en: {
       bad_request: "Bad Request",
       forbidden: "Forbidden",
