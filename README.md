@@ -13,7 +13,7 @@ cd deadlinkchecker
 ```
 3. Create a virtual environment
 ```
-pythom -m venv venv
+python -m venv venv
 ```
 4. Activate the virtual environmeny
 ```
